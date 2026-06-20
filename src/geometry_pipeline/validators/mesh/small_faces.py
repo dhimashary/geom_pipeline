@@ -51,7 +51,7 @@ class SmallFacesValidator(BaseValidator):
         threshold = ctx.tolerances.small_face_max_dim
 
         raw: list[dict] = []
-        for f in geom.faces:
+        for fid, f in enumerate(geom.faces):
             vids = list(getattr(f, "vertex_indices", []))
             pts = [points[i - 1] for i in vids]
             if not pts:
@@ -62,7 +62,7 @@ class SmallFacesValidator(BaseValidator):
             max_dim = max(max(xs) - min(xs), max(ys) - min(ys), max(zs) - min(zs))
             if max_dim < threshold:
                 raw.append({
-                    "fid": f.fid,
+                    "fid": getattr(f, "fid", fid),
                     "max_dim": max_dim,
                     "threshold": threshold,
                     "elements": {
