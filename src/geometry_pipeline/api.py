@@ -106,7 +106,7 @@ def inspect_geometry(
     except Exception as exc:
         raise GeometryError(str(exc)) from exc
 
-    issue_report = kind_dict(result.initial.issues)
+    issue_report = kind_dict(result.composite_issues)
     report = snapshot_report(result)
     return GeometryResult(
         outputs={},

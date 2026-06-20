@@ -63,120 +63,6 @@ def _classify_segment_triangle_hit(t, u, v, *, t_eps=1e-9, bary_eps=1e-9):
         return "segment_face_interior_intersection"
     return "unknown"
 
-
-def detect_segment_facet_intersections_cdt(
-    faces: List[Face],
-    points: List[Tuple[float, float, float]],
-    *,
-    warn_planar_tol_m=1e-4,
-    fatal_planar_tol_m=1e-3,
-    eps=1e-10,
-    bbox_pad=1e-9,
-    max_reports=200,
-    skip_warped_faces=True,
-) -> List[Dict[str, Any]]:
-    tri_list = []
-
-    for f in faces:
-        poly = f.vertex_indices
-        if len(poly) < 3:
-            continue
-
-        planar_flag = None
-        if len(poly) > 3:
-            pstat, _pmax_m, _prms_m = classify_face_planarity_m(
-                poly,
-                points,
-                warn_planar_tol_m=warn_planar_tol_m,
-                fatal_planar_tol_m=fatal_planar_tol_m,
-            )
-            planar_flag = pstat
-            if skip_warped_faces and pstat == "fatal":
-                continue
-
-        if len(poly) == 3:
-            tris = [poly[:]]
-        else:
-            tris = triangulate_face_cdt_shapely(poly, points)
-
-        if not tris:
-            continue
-
-        for tri in tris:
-            if len(tri) != 3:
-                continue
-            a, b, c = tri
-            A, B, C = points[a - 1], points[b - 1], points[c - 1]
-            tri_list.append({
-                "fid": f.fid,
-                "tri": (a, b, c),
-                "aabb": aabb_of_tri(A, B, C),
-                "planar_flag": planar_flag,
-            })
-
-    edge_to_faces = defaultdict(set)
-    edge_set = set()
-    for f in faces:
-        poly = f.vertex_indices
-        n = len(poly)
-        if n < 2:
-            continue
-        for i in range(n):
-            u = poly[i]
-            v = poly[(i + 1) % n]
-            e = (u, v) if u < v else (v, u)
-            edge_set.add(e)
-            edge_to_faces[e].add(f.fid)
-
-    tri_vset = [set(t["tri"]) for t in tri_list]
-
-    reports = []
-    for (u, v) in edge_set:
-        P0 = points[u - 1]
-        P1 = points[v - 1]
-        seg_bb = aabb_of_seg(P0, P1)
-
-        for ti, tinfo in enumerate(tri_list):
-            if not aabb_overlap(seg_bb, tinfo["aabb"], pad=bbox_pad):
-                continue
-
-            a, b, c = tinfo["tri"]
-
-            if u in tri_vset[ti] or v in tri_vset[ti]:
-                continue
-
-            A, B, C = points[a - 1], points[b - 1], points[c - 1]
-            hit, t, uu, vv = segment_intersects_triangle(P0, P1, A, B, C, eps=eps)
-            if not hit:
-                continue
-
-            hit_type = _classify_segment_triangle_hit(t, uu, vv, t_eps=1e-9, bary_eps=1e-9)
-            I = vadd(P0, vmul(sub(P1, P0), t))
-
-            original_face = next(f for f in faces if f.fid == tinfo["fid"])
-            facet_fid_coordinates = [points[vid - 1] for vid in original_face.vertex_indices]
-
-            reports.append({
-                "edge": (u, v),
-                "edge_coordinates": [P0, P1],
-                "edge_fids": sorted(edge_to_faces[(u, v) if u < v else (v, u)]),
-                "facet_fid": tinfo["fid"],
-                "facet_fid_coordinates": facet_fid_coordinates,
-                "facet_tri": (a, b, c),
-                "point": I,
-                "t_param": float(t),
-                "bary_u": float(uu),
-                "bary_v": float(vv),
-                "bary_w": float(1.0 - uu - vv),
-                "hit_type": hit_type,
-                "facet_planarity_flag": tinfo["planar_flag"],
-            })
-            if len(reports) >= max_reports:
-                return reports
-
-    return reports
-
-
 def detect_segment_facet_intersections_cdt_mesh(
     mesh: Mesh,
     *,
@@ -223,6 +109,7 @@ def detect_segment_facet_intersections_cdt_mesh(
             A, B, C = points[a - 1], points[b - 1], points[c - 1]
             tri_list.append({
                 "fid": getattr(face, "fid", fi),
+                "face_vids": poly,
                 "tri": (a, b, c),
                 "aabb": aabb_of_tri(A, B, C),
                 "planar_flag": planar_flag,
@@ -267,8 +154,7 @@ def detect_segment_facet_intersections_cdt_mesh(
             hit_type = _classify_segment_triangle_hit(t, uu, vv, t_eps=1e-9, bary_eps=1e-9)
             I = vadd(P0, vmul(sub(P1, P0), t))
 
-            original_face = next((f for f in mesh.faces if getattr(f, "fid", None) == tinfo["fid"]), None)
-            facet_fid_coordinates = [points[vid - 1] for vid in (original_face.vertex_indices if original_face is not None else [])]
+            facet_fid_coordinates = [points[vid - 1] for vid in tinfo["face_vids"]]
 
             reports.append({
                 "edge": (u, v),

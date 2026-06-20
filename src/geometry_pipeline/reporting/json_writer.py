@@ -22,9 +22,10 @@ class JsonReportWriter:
     receives via `set_pipeline_result`.
     """
 
-    def __init__(self, *, issue_suffix: str = "_issue.json", report_suffix: str = "_report.json") -> None:
+    def __init__(self, *, issue_suffix: str = "_issue.json", report_suffix: str = "_report.json", use_composite: bool = False) -> None:
         self.issue_suffix = issue_suffix
         self.report_suffix = report_suffix
+        self.use_composite = use_composite
         self._result: PipelineResult | None = None
     
 
@@ -55,7 +56,13 @@ class JsonReportWriter:
             def snapshot_report(x):
                 return {"pre": {}, "post": {}, "repairs": []}
         
-        issue_report = kind_dict(self._result.initial.issues if getattr(self._result, "initial", None) else None)
+        if self.use_composite:
+            issues = self._result.composite_issues
+        elif getattr(self._result, "initial", None):
+            issues = self._result.initial.issues
+        else:
+            issues = None
+        issue_report = kind_dict(issues)
         report = snapshot_report(self._result)
 
         issue_path = parent / f"{stem}{self.issue_suffix}"

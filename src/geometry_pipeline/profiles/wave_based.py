@@ -90,7 +90,7 @@ def _wave_based_stages(tjunc, intersect, *, inspect: bool = False) -> list[Stage
                     # RepairPlcByOffsetRepair(detector=intersect),
                 ]
             ),
-            post_validators=[intersect],
+            post_validators=[intersect, OverlappingFacesValidator()],
         ),
         Stage(
             name="topology",
@@ -155,8 +155,15 @@ def wave_based_inspect_profile() -> SimulationProfile:
     """Inspect-only profile: same stages run (repairs still happen so each
     detector sees a clean mesh), but no geometry exporters are wired.
 
-    The caller is expected to call ``write_issue_report(result, path)``
-    on the returned ``PipelineResult`` to persist the diagnostic JSON.
+    Each issue kind is detected at its authoritative moment via the stage
+    ``post_validators`` (T-junctions *before* their fix, intersections and
+    overlaps *after* it, boundary/holes at the end). The PRE pass covers the
+    repair-independent kinds (duplicate/degenerate/non-planar/small).
+
+    ``final_validators`` is intentionally empty: re-validating the
+    fully-processed mesh would report post-repair counts and override the
+    per-stage diagnostics in ``PipelineResult.composite_issues``. The writer
+    therefore consumes the composite view (``use_composite=True``).
     """
     tjunc = TJunctionsValidator()
     intersect = IntersectionsValidator()
@@ -165,7 +172,7 @@ def wave_based_inspect_profile() -> SimulationProfile:
         target_ir=Mesh,
         pre_validators=_wave_based_pre_validators(tjunc, intersect),
         stages=_wave_based_stages(tjunc, intersect, inspect=True),
-        final_validators=_wave_based_final_validators(tjunc, intersect),
-        exporters=[JsonReportWriter()],
+        final_validators=[],
+        exporters=[JsonReportWriter(use_composite=True)],
         tolerances=Tolerances(),
     )

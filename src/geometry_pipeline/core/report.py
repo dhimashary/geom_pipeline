@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from geometry_pipeline.core.ir import Geometry
-from geometry_pipeline.core.issues import DetectionStage, Issue
+from geometry_pipeline.core.issues import DetectionStage, Issue, IssueKind
 
 
 @dataclass
@@ -45,3 +45,21 @@ class PipelineResult:
     @property
     def final(self) -> ValidationSnapshot | None:
         return self.snapshots[-1] if self.snapshots else None
+
+    @property
+    def composite_issues(self) -> list[Issue]:
+        """Per-kind "last detection wins" across all snapshots.
+
+        Each ``IssueKind`` is reported from the *latest* snapshot that
+        detected it, so kinds measured at a specific stage (e.g. T-junctions
+        before their fix, intersections after the T-junction fix) come from
+        that stage rather than the raw PRE pass or a fully-processed FINAL
+        pass. Kinds only ever seen in PRE keep their PRE issues.
+        """
+        latest: dict[IssueKind, list[Issue]] = {}
+        for snap in self.snapshots:
+            by_kind: dict[IssueKind, list[Issue]] = {}
+            for issue in snap.issues:
+                by_kind.setdefault(issue.kind, []).append(issue)
+            latest.update(by_kind)
+        return [issue for issues in latest.values() for issue in issues]
