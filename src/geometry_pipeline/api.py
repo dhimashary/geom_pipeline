@@ -53,12 +53,17 @@ def _collect_outputs(result: Any) -> dict[str, str]:
 
 
 def _count_issues(issue_report: dict) -> int:
-    # Sum numeric values in the issue_report; if nested, sum recursively
+    # Count issues in the report. `kind_dict` shapes the report as a mapping of
+    # issue-kind -> list of issue entries, so list lengths must be counted.
     def _sum(v):
+        if isinstance(v, bool):
+            return 0
         if isinstance(v, int):
             return v
         if isinstance(v, dict):
             return sum(_sum(x) for x in v.values())
+        if isinstance(v, list):
+            return len(v)
         return 0
 
     return _sum(issue_report or {})
