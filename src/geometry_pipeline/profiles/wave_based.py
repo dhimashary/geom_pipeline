@@ -173,6 +173,6 @@ def wave_based_inspect_profile() -> SimulationProfile:
         pre_validators=_wave_based_pre_validators(tjunc, intersect),
         stages=_wave_based_stages(tjunc, intersect, inspect=True),
         final_validators=[],
-        exporters=[JsonReportWriter(use_composite=True)],
+        exporters=[GmshGeoExporter(),JsonReportWriter(use_composite=True)],
         tolerances=Tolerances(),
     )

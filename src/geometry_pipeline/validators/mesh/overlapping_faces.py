@@ -19,7 +19,9 @@ Detection strategy
    `overlap_coplanar_dist_m`).
 4. Project both faces onto the dominant axis plane and measure the area of the
    2D intersection of their triangulations. If it exceeds
-   `overlap_min_area_m2` the pair is reported.
+   `overlap_min_area_m2` *and* survives erosion by half `overlap_sliver_width_m`
+   (so long, micron-thin slivers from edge-adjacent faces are discarded) the
+   pair is reported.
 """
 from __future__ import annotations
 
@@ -120,6 +122,7 @@ def detect_overlapping_faces_mesh(
     coplanar_dist_m: float = 1e-4,
     normal_cos_eps: float = 1e-6,
     min_overlap_area_m2: float = 1e-9,
+    sliver_width_m: float = 1e-3,
     bbox_pad: float = 1e-9,
     max_reports: int = 2000,
 ) -> List[Dict[str, Any]]:
@@ -197,6 +200,16 @@ def detect_overlapping_faces_mesh(
             if overlap_area <= min_overlap_area_m2:
                 continue
 
+            # Reject thin slivers: two coplanar faces that share an edge can
+            # produce a long, micron-thin intersection when their common
+            # vertices differ by coordinate noise. Eroding the intersection by
+            # half the sliver width collapses such slivers to nothing while a
+            # genuine area overlap survives.
+            if sliver_width_m > 0.0 and not inter.is_empty:
+                core = inter.buffer(-0.5 * sliver_width_m)
+                if core.is_empty or float(getattr(core, "area", 0.0)) <= min_overlap_area_m2:
+                    continue
+
             coords_a = [points[vid - 1] for vid in fa["vids"]]
             coords_b = [points[vid - 1] for vid in fb["vids"]]
             reports.append({
@@ -235,6 +248,7 @@ class OverlappingFacesValidator(BaseValidator):
             coplanar_dist_m=ctx.tolerances.overlap_coplanar_dist_m,
             normal_cos_eps=ctx.tolerances.overlap_normal_cos_eps,
             min_overlap_area_m2=ctx.tolerances.overlap_min_area_m2,
+            sliver_width_m=ctx.tolerances.overlap_sliver_width_m,
             bbox_pad=ctx.tolerances.bbox_pad,
             max_reports=ctx.tolerances.max_reports,
         )

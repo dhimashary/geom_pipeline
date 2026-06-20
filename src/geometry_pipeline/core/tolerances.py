@@ -22,6 +22,11 @@ class Tolerances:
     # ---- Overlapping-face tolerances
     overlap_coplanar_dist_m: float = 1e-4
     overlap_normal_cos_eps: float = 1e-6
+    # Minimum width (metres) of an overlap region. The 2D intersection is eroded
+    # by half this value; anything that does not survive is a thin sliver caused
+    # by coordinate noise at a shared edge (edge-adjacent faces) rather than a
+    # genuine area overlap, and is not reported.
+    overlap_sliver_width_m: float = 1e-3
 
     # ---- Area tolerances (m²)
     degenerate_area: float = 1e-12
