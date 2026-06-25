@@ -81,7 +81,10 @@ class GmshGeoExporter:
         concrete `.geo` filepath (avoids directory/file collisions on Windows).
         """
         base_path = Path(base_path)
-        return base_path.with_name(base_path.stem + ".geo")
+        # ``base_path`` is an extension-less base; use ``.name`` (not ``.stem``)
+        # so filenames containing dots (e.g. ``Vertigo_2.06_...``) are not
+        # truncated by Path treating ``.06_...`` as a suffix.
+        return base_path.with_name(base_path.name + ".geo")
 
     def _export_processed_topology_to_gmsh_geo(
         self,

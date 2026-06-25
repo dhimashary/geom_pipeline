@@ -145,7 +145,7 @@ def wave_based_profile(
                 cavity_pitch=cavity_pitch,
                 cavity_closing_iterations=cavity_closing_iterations,
             ),
-            JsonReportWriter(),
+            JsonReportWriter(issue_suffix="_remaining_issue.json", issue_source="final"),
         ],
         tolerances=Tolerances(),
     )
@@ -163,7 +163,8 @@ def wave_based_inspect_profile() -> SimulationProfile:
     ``final_validators`` is intentionally empty: re-validating the
     fully-processed mesh would report post-repair counts and override the
     per-stage diagnostics in ``PipelineResult.composite_issues``. The writer
-    therefore consumes the composite view (``use_composite=True``).
+    therefore consumes the composite view (``issue_source="composite"``) and
+    skips the ``_report.json`` artifact (``write_report=False``).
     """
     tjunc = TJunctionsValidator()
     intersect = IntersectionsValidator()
@@ -173,6 +174,13 @@ def wave_based_inspect_profile() -> SimulationProfile:
         pre_validators=_wave_based_pre_validators(tjunc, intersect),
         stages=_wave_based_stages(tjunc, intersect, inspect=True),
         final_validators=[],
-        exporters=[GmshGeoExporter(),JsonReportWriter(use_composite=True)],
+        exporters=[
+            GmshGeoExporter(),
+            JsonReportWriter(
+                issue_suffix="_inspect_issue.json",
+                issue_source="composite",
+                write_report=False,
+            ),
+        ],
         tolerances=Tolerances(),
     )

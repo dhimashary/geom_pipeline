@@ -17,7 +17,10 @@ class MeshObjExporter:
     def path_for(self, base_path: Path) -> Path:
         """Mirror legacy convention: write `<stem>_repaired.obj` next to the .geo."""
         base_path = Path(base_path)
-        return base_path.with_name(base_path.stem + "_repaired.obj")
+        # ``base_path`` is an extension-less base; use ``.name`` (not ``.stem``)
+        # so filenames containing dots (e.g. ``Vertigo_2.06_...``) are not
+        # truncated by Path treating ``.06_...`` as a suffix.
+        return base_path.with_name(base_path.name + "_repaired.obj")
 
     def write(self, geom: Mesh, path: Path) -> None:
         points = [(v.x, v.y, v.z) for v in geom.vertices]

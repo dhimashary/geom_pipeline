@@ -12,20 +12,39 @@ from geometry_pipeline.core.jsonable import to_jsonable
 
 
 class JsonReportWriter:
-    """Writes two JSON artifacts derived from the pipeline result:
+    """Writes JSON artifacts derived from the pipeline result:
 
     - `<stem>_issue.json`: flat frontend-shaped issue dict (kind counts)
     - `<stem>_report.json`: PRE/POST snapshots + optional repairs
+      (only when ``write_report=True``)
+
+    ``issue_source`` selects which snapshot feeds `<stem>_issue.json`:
+      - ``"initial"``   — the PRE snapshot (raw input issues)
+      - ``"final"``     — the FINAL snapshot (post-repair, from the
+        profile's ``final_validators``)
+      - ``"composite"`` — per-kind "last detection wins" across all stages
 
     Unlike the geometry exporters in `io.exporters`, this writer ignores the
     `geom` argument and instead serializes the full `PipelineResult`, which it
     receives via `set_pipeline_result`.
     """
 
-    def __init__(self, *, issue_suffix: str = "_issue.json", report_suffix: str = "_report.json", use_composite: bool = False) -> None:
+    def __init__(
+        self,
+        *,
+        issue_suffix: str = "_issue.json",
+        report_suffix: str = "_report.json",
+        issue_source: str = "initial",
+        write_report: bool = True,
+    ) -> None:
+        if issue_source not in ("initial", "final", "composite"):
+            raise ValueError(
+                f"issue_source must be 'initial', 'final' or 'composite', got {issue_source!r}"
+            )
         self.issue_suffix = issue_suffix
         self.report_suffix = report_suffix
-        self.use_composite = use_composite
+        self.issue_source = issue_source
+        self.write_report = write_report
         self._result: PipelineResult | None = None
     
 
@@ -56,21 +75,24 @@ class JsonReportWriter:
             def snapshot_report(x):
                 return {"pre": {}, "post": {}, "repairs": []}
         
-        if self.use_composite:
+        if self.issue_source == "composite":
             issues = self._result.composite_issues
-        elif getattr(self._result, "initial", None):
-            issues = self._result.initial.issues
-        else:
-            issues = None
+        elif self.issue_source == "final":
+            snap = getattr(self._result, "final", None)
+            issues = snap.issues if snap else None
+        else:  # "initial"
+            snap = getattr(self._result, "initial", None)
+            issues = snap.issues if snap else None
         issue_report = kind_dict(issues)
-        report = snapshot_report(self._result)
 
         issue_path = parent / f"{stem}{self.issue_suffix}"
-        report_path = parent / f"{stem}{self.report_suffix}"
-
         issue_path.parent.mkdir(parents=True, exist_ok=True)
         issue_path.write_text(json.dumps(to_jsonable(issue_report), indent=2, default=str))
-        report_path.write_text(json.dumps(to_jsonable(report), indent=2, default=str))
+
+        if self.write_report:
+            report = snapshot_report(self._result)
+            report_path = parent / f"{stem}{self.report_suffix}"
+            report_path.write_text(json.dumps(to_jsonable(report), indent=2, default=str))
 
 
 __all__ = ["JsonReportWriter"]

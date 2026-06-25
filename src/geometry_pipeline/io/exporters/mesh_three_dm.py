@@ -26,7 +26,10 @@ class MeshThreeDMExporter:
     def path_for(self, base_path: Path) -> Path:
         """Write `<stem>_repaired.3dm` next to the .geo/obj file."""
         base_path = Path(base_path)
-        return base_path.with_name(base_path.stem + "_repaired.3dm")
+        # ``base_path`` is an extension-less base; use ``.name`` (not ``.stem``)
+        # so filenames containing dots (e.g. ``Vertigo_2.06_...``) are not
+        # truncated by Path treating ``.06_...`` as a suffix.
+        return base_path.with_name(base_path.name + "_repaired.3dm")
 
     def write(self, geom: Mesh, path: Path) -> None:
         # Ensure OBJ exists (use the same convention as MeshObjExporter)
@@ -36,17 +39,17 @@ class MeshThreeDMExporter:
         # Use the same naming convention as MeshObjExporter: replace the suffix with .obj
         obj_path = base_path.with_suffix(".obj")
         self.logger.warning(f"Expected OBJ path for 3DM export: {obj_path}")
-        clean_stem = base_path.stem.removesuffix("_repaired")
+        out_stem = base_path.stem  # keep the `_repaired` suffix in the output names
 
         if not obj_path.exists():
             # Generate OBJ from the Mesh IR first
             MeshObjExporter().write(geom, obj_path)
 
         # Convert OBJ -> 3DM using the existing converter
-        rhino_path = base_path.with_name(clean_stem + ".3dm")
+        rhino_path = base_path.with_name(out_stem + ".3dm")
 
         # If a previous .3dm exists, move it to `_initial.3dm` (overwrite if exists)
-        initial_path = base_path.with_name(clean_stem + "_old.3dm")
+        initial_path = base_path.with_name(out_stem + "_old.3dm")
         try:
             if rhino_path.exists():
                 if initial_path.exists():
@@ -81,7 +84,7 @@ class MeshThreeDMExporter:
             raise RuntimeError("Failed to convert OBJ to 3DM") from ex
 
         #replacethe old zip file with a new one containing the new 3dm file
-        zip_file_path = base_path.with_name(clean_stem + ".zip")
+        zip_file_path = base_path.with_name(out_stem + ".zip")
         self.logger.warning(f"Creating ZIP archive at {zip_file_path} containing {rhino_path.name}")
         with zipfile.ZipFile(zip_file_path, "w") as zipf:
                 zipf.write(rhino_path, arcname=rhino_path.name) 
