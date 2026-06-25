@@ -1,0 +1,40 @@
+"""Canonical tolerance bundle attached to a SimulationProfile.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class Tolerances:
+    # ---- Length tolerances (metres)
+    vertex_merge: float = 1e-2
+    planarity_warn_m: float = 1e-4
+    planarity_fatal_m: float = 1e-3
+    planarity_split: float = 1e-6
+    t_junction: float = 1e-2
+    clipping: float = 1e-9
+    intersection_eps: float = 1e-10
+    bbox_pad: float = 1e-9
+    plc_offset: float = 0.01
+    small_face_max_dim: float = 0.10
+
+    # ---- Overlapping-face tolerances
+    overlap_coplanar_dist_m: float = 1e-4
+    overlap_normal_cos_eps: float = 1e-6
+
+    # ---- Area tolerances (m²)
+    degenerate_area: float = 1e-12
+    overlap_min_area_m2: float = 1e-9
+
+    # ---- Sliver tolerance (metres): smallest face altitude below which a
+    # near-collinear face is treated as degenerate.
+    degenerate_min_altitude_m: float = 1e-4
+
+    # ---- Iteration caps
+    max_t_junction_iters: int = 100
+    max_plc_iters: int = 20
+    max_edge_split_passes: int = 10
+
+    # ---- Reporting caps
+    max_reports: int = 200

@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "geometry_pipeline"
+version = "0.1.0"
+description = "Detached geometry processing pipeline for CHORAS (import, validate, repair, export room geometry)."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "CHORAS" }]
+
+# Runtime dependencies. Pins mirror the versions verified in detached_plan.md §6.
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "shapely==2.1.2",
+    "rhino3dm==8.6.1",
+    "ezdxf>=1.3",
+    "trimesh==4.4.1",
+    "numpy-stl==3.1.1",
+    "gmsh==4.13.1",
+    "meshio==5.3.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-cov",
+    "mypy",
+    "ruff",
+]
+
+[project.urls]
+Homepage = "https://github.com/choras-org/geometry_pipeline"
+
+# --- Packaging layout -------------------------------------------------------
+# src layout: the importable package lives in src/geometry_pipeline/.
+# During the import rename, move the current top-level files
+# (__init__.py, api.py, report.py, tolerances.py) and the contents of app/*
+# into src/geometry_pipeline/, rewriting `app.*` imports to `geometry_pipeline.*`.
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["geometry_pipeline*"]
+
+[tool.setuptools.package-data]
+# Ship type marker, the compatibility baseline, and the native kernel sources
+# (needed so the C++ volume_detector can be compiled inside the Docker image).
+"geometry_pipeline" = [
+    "py.typed",
+    "compatibility/*.json",
+    "cavity_detection/_native/*.cpp",
+    "cavity_detection/_native/CMakeLists.txt",
+    "cavity_detection/_native/build.sh",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

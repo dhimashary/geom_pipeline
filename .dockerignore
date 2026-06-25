@@ -1,0 +1,38 @@
+# Build context hygiene for the geometry_pipeline image.
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+.env
+
+# Build artefacts
+build/
+dist/
+*.egg-info/
+src/**/volume/_native/build/
+bin/
+
+# Tooling / VCS
+.git/
+.gitignore
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.vscode/
+.idea/
+
+# Docs and planning notes (not needed in the image)
+*.md
+!README.md
+plan.md
+detached_plan.md
+notes.md
+code_smells.md
+refactor_checklist.md
+
+# Tests and samples
+tests/
+example_*/

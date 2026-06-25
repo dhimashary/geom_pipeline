@@ -1,0 +1,28 @@
+# Byte-compiled / optimized / cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Packaging / build artifacts
+*.egg-info/
+*.egg
+build/
+dist/
+.eggs/
+
+# Test / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Native build output
+src/geometry_pipeline/cavity_detection/_native/build/
+bin/
+
+# Virtual environments
+.venv/
+venv/
+env/
