@@ -19,7 +19,6 @@ KIND_TO_LEGACY_KEY: dict[IssueKind, str] = {
     IssueKind.INTERSECTION:     "intersections",
     IssueKind.OVERLAPPING_FACE: "overlapping_faces",
     IssueKind.SMALL_FACE:       "small_faces",
-    IssueKind.INVERTED_NORMAL:  "inverted_normals",
 }
 
 

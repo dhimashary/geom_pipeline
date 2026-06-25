@@ -19,6 +19,12 @@ class Tolerances:
     plc_offset: float = 0.01
     small_face_max_dim: float = 0.10
 
+    # ---- Possible-hole tolerances
+    # Max out-of-plane distance (metres) for a face to count as coplanar with a
+    # candidate boundary loop when deciding whether the loop interior is filled
+    # by surface (an open-surface rim) rather than an empty hole.
+    hole_fill_coplanar_m: float = 1e-2
+
     # ---- Overlapping-face tolerances
     overlap_coplanar_dist_m: float = 1e-4
     overlap_normal_cos_eps: float = 1e-6
