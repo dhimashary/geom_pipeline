@@ -1306,13 +1306,44 @@ def repair_multi_hit_face_collinear_chain(
         vid = get_or_create_vertex(points, p)
         chain_vids.append(vid)
     vids = _face_vids(face)
+    # Chain direction in 3D, from the first to the last (ordered) touch point.
+    a3 = points[chain_vids[0] - 1]
+    b3 = points[chain_vids[-1] - 1]
+    d3 = (b3[0] - a3[0], b3[1] - a3[1], b3[2] - a3[2])
+    dlen = math.sqrt(d3[0] * d3[0] + d3[1] * d3[1] + d3[2] * d3[2])
+
+    def _chain_param(vid: int) -> float:
+        """Signed position of a vertex along the chain direction."""
+        if dlen <= 1e-12:
+            return 0.0
+        p = points[vid - 1]
+        return (
+            (p[0] - a3[0]) * d3[0]
+            + (p[1] - a3[1]) * d3[1]
+            + (p[2] - a3[2]) * d3[2]
+        ) / dlen
+
+    # The two chain endpoints sit *inside* the face. Snapping each end to the
+    # globally nearest corner collapses both onto the same vertex when the
+    # chain hugs one side (e.g. 134 and 138 are both nearest to corner 123),
+    # which produces a self-touching "bridged" loop. Instead, anchor the chain
+    # *start* to the nearest boundary vertex behind it (param <= start) and the
+    # chain *end* to the nearest boundary vertex ahead of it (param >= end), so
+    # the two anchors land on opposite sides and the split is a clean cut.
+    tol_param = 1e-9
+    start_param = _chain_param(chain_vids[0])
+    end_param = _chain_param(chain_vids[-1])
+
+    behind = [v for v in vids if _chain_param(v) <= start_param + tol_param]
+    ahead = [v for v in vids if _chain_param(v) >= end_param - tol_param]
+
     start_vid = min(
-        vids,
-        key=lambda vid: distance(points[vid - 1], points[chain_vids[0] - 1])
+        behind or vids,
+        key=lambda vid: distance(points[vid - 1], points[chain_vids[0] - 1]),
     )
     end_vid = min(
-        vids,
-        key=lambda vid: distance(points[vid - 1], points[chain_vids[-1] - 1])
+        ahead or vids,
+        key=lambda vid: distance(points[vid - 1], points[chain_vids[-1] - 1]),
     )
     split_chain = [start_vid] + chain_vids + [end_vid]
     verts = vids
