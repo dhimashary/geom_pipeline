@@ -19,6 +19,7 @@ class GmshGeoExporter:
         self,
         volume_name: str = "RoomVolume",
         *,
+        repaired: bool = False,
         detect_cavities: bool = True,
         detection_mode: str = "native",
         cavity_pitch: float = 0.05,
@@ -29,6 +30,9 @@ class GmshGeoExporter:
         ----------
         volume_name : Name used for the single Physical Volume in legacy
             output, or as fallback when detection fails / yields nothing.
+        repaired : If True, write ``<stem>_repaired.geo`` (and read the matching
+            ``<stem>_repaired.3dm`` for material mapping); otherwise write the
+            plain ``<stem>.geo`` and read ``<stem>.3dm``.
         detect_cavities : If True, run cavity detection before writing and
             emit one `Surface Loop` + `Volume` per detected cavity (Gmsh
             requires every enclosed space to be its own volume).
@@ -44,6 +48,7 @@ class GmshGeoExporter:
             (voxel detector only) to bridge sub-pitch gaps before labeling.
         """
         self.volume_name = volume_name
+        self.repaired = repaired
         self.detect_cavities = detect_cavities
         self.detection_mode = detection_mode
         self.cavity_pitch = cavity_pitch
@@ -84,7 +89,8 @@ class GmshGeoExporter:
         # ``base_path`` is an extension-less base; use ``.name`` (not ``.stem``)
         # so filenames containing dots (e.g. ``Vertigo_2.06_...``) are not
         # truncated by Path treating ``.06_...`` as a suffix.
-        return base_path.with_name(base_path.name + ".geo")
+        suffix = "_repaired.geo" if self.repaired else ".geo"
+        return base_path.with_name(base_path.name + suffix)
 
     def _export_processed_topology_to_gmsh_geo(
         self,

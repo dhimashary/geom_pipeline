@@ -141,6 +141,7 @@ def wave_based_profile(
             ExporterRegistry.get("3dm", Mesh.kind),
             GmshGeoExporter(
                 volume_name=volume_name,
+                repaired=True,
                 detect_cavities=detect_cavities,
                 cavity_pitch=cavity_pitch,
                 cavity_closing_iterations=cavity_closing_iterations,
