@@ -8,7 +8,6 @@ from geometry_pipeline.core.issues import (
     Severity,
 )
 from geometry_pipeline.reporting.frontend_schema import (
-    KIND_TO_LEGACY_KEY,
     kind_dict,
 )
 from geometry_pipeline.validators.mesh.intersections import IntersectionsValidator
@@ -21,8 +20,9 @@ def _issue(kind: IssueKind, payload: dict | None = None) -> Issue:
 
 def test_every_issue_kind_is_mapped_so_none_is_silently_dropped():
     # Regression for the "translator drift" smell: a kind missing from the
-    # mapping would vanish from the report. All kinds must be present.
-    assert set(KIND_TO_LEGACY_KEY) == set(IssueKind)
+    # report would vanish. Every kind's enum value must be a key in the report.
+    report = kind_dict([])
+    assert set(report) == {k.value for k in IssueKind}
 
 
 def test_kind_dict_is_generic_and_routes_each_kind_to_its_key():
@@ -30,7 +30,7 @@ def test_kind_dict_is_generic_and_routes_each_kind_to_its_key():
     report = kind_dict(issues)
 
     for k in IssueKind:
-        key = KIND_TO_LEGACY_KEY[k]
+        key = k.value
         assert len(report[key]) == 1, f"{k} not routed to {key}"
         assert report[key][0]["elements"] == [{"type": "vertex", "points": [[0, 0, 0]]}]
 
@@ -39,14 +39,14 @@ def test_summary_issues_are_excluded():
     # Summary marker Issues emitted by cap_and_summarize are not part of the
     # frontend shape.
     report = kind_dict([_issue(IssueKind.T_JUNCTION, {"summary": True})])
-    assert report["T-junctions"] == []
+    assert report["t_junction"] == []
 
 
 
 def test_inverted_normal_is_no_longer_dropped():
     report = kind_dict([_issue(IssueKind.INVERTED_NORMAL, {"elements": []})])
-    assert "inverted_normals" in report
-    assert len(report["inverted_normals"]) == 1
+    assert "inverted_normal" in report
+    assert len(report["inverted_normal"]) == 1
 
 
 def test_t_junction_validator_builds_elements_in_payload():
@@ -61,7 +61,7 @@ def test_t_junction_validator_builds_elements_in_payload():
     ]
     # The translator then surfaces those elements with no per-kind logic.
     issue = _issue(IssueKind.T_JUNCTION, payload)
-    assert kind_dict([issue])["T-junctions"][0]["elements"] == payload["elements"]
+    assert kind_dict([issue])["t_junction"][0]["elements"] == payload["elements"]
 
 
 def test_intersection_validator_builds_elements_in_payload():

@@ -4,24 +4,6 @@ from geometry_pipeline.core.issues import Issue, IssueKind
 from geometry_pipeline.core.report import PipelineResult, ValidationSnapshot
 
 
-# The single source of truth for the frontend's exact JSON keys. This is the
-# *only* place that knows the frontend's key strings. Element-shaping lives in
-# each validator's payload (`payload["elements"]`), so this translator stays
-# generic: adding a new IssueKind means adding one entry here and (optionally)
-# building `elements` inside that validator — no per-kind branches below.
-KIND_TO_LEGACY_KEY: dict[IssueKind, str] = {
-    IssueKind.DUPLICATE_VERTEX: "duplicate_vertices",
-    IssueKind.NON_PLANAR_FACE:  "non_coplanar_faces",
-    IssueKind.T_JUNCTION:       "T-junctions",
-    IssueKind.POSSIBLE_HOLE:    "possible_holes",
-    IssueKind.BOUNDARY_EDGE:    "boundary_edges",
-    IssueKind.DEGENERATE_FACE:  "degenerate_faces",
-    IssueKind.INTERSECTION:     "intersections",
-    IssueKind.OVERLAPPING_FACE: "overlapping_faces",
-    IssueKind.SMALL_FACE:       "small_faces",
-}
-
-
 def _legacy_severity(i: Issue) -> str:
     return {"fatal": "high", "warn": "medium"}.get(i.severity.value, "low")
 
@@ -50,24 +32,19 @@ def _entry(i: Issue) -> dict:
 
 
 def kind_dict(issues: list[Issue]) -> dict:
-    """Frontend-shaped flat dict — one list per IssueKind, built generically.
+    """Flat dict — one list per IssueKind, keyed by the kind's enum value.
 
-    Iterates a single mapping rather than enumerating kinds, so a new
-    `IssueKind` is never silently dropped: every mapped kind always gets a
-    (possibly empty) list, and any unmapped kind would surface as a missing
-    key rather than vanishing from a hand-written branch.
+    Enumerates every `IssueKind`, so each kind always gets a (possibly empty)
+    list and no kind is ever silently dropped.
 
     Summary marker Issues emitted by `validators.mesh._common.cap_and_summarize`
     when a list is capped are excluded from the frontend shape.
     """
-    out: dict[str, list[dict]] = {key: [] for key in KIND_TO_LEGACY_KEY.values()}
+    out: dict[str, list[dict]] = {kind.value: [] for kind in IssueKind}
     for i in issues or []:
         if i.payload.get("summary"):
             continue
-        key = KIND_TO_LEGACY_KEY.get(i.kind)
-        if key is None:
-            continue
-        out[key].append(_entry(i))
+        out[i.kind.value].append(_entry(i))
     return out
 
 
