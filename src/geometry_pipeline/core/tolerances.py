@@ -24,6 +24,11 @@ class Tolerances:
     # candidate boundary loop when deciding whether the loop interior is filled
     # by surface (an open-surface rim) rather than an empty hole.
     hole_fill_coplanar_m: float = 1e-2
+    # Padding (metres) applied to a component's bounding box when deciding
+    # whether one mesh component sits inside another. Used to separate the room
+    # shell from free-standing objects (furniture) so that holes inside objects
+    # are not reported as room holes.
+    hole_object_containment_m: float = 1e-3
 
     # ---- Overlapping-face tolerances
     overlap_coplanar_dist_m: float = 1e-4
