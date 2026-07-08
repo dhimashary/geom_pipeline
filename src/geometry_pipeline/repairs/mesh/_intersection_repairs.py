@@ -386,8 +386,28 @@ def repair_plc_single_splits_iterative(
         for r in endpoint_face_hits:
             hits_by_face[r["facet_fid"]].append(r)
 
-        multi_hit_faces = [fid for fid, rs in hits_by_face.items() if len(rs) > 1]
-        single_hit_candidates = [rs[0] for fid, rs in hits_by_face.items() if len(rs) == 1]
+        # A single vertex kissing a face is reported once PER incident edge
+        # (each incident edge's endpoint lands on the face), so one physical
+        # touch point can appear as several hits on the same face. Collapse
+        # reports that resolve to the *same* touching vertex before deciding
+        # single- vs multi-hit: a lone touch vertex is then routed to the
+        # (implemented) single-split repair instead of the multi-hit path,
+        # which only handles collinear chains of *distinct* touch points.
+        multi_hit_faces = []
+        single_hit_candidates = []
+        for fid, rs in hits_by_face.items():
+            reps_by_vid = {}
+            for r in rs:
+                touch_vid, _ = _endpoint_vids_from_edge_t(
+                    r["edge"], r["t_param"], t_eps=1e-9
+                )
+                key = touch_vid if touch_vid is not None else id(r)
+                reps_by_vid.setdefault(key, r)
+
+            if len(reps_by_vid) == 1:
+                single_hit_candidates.append(next(iter(reps_by_vid.values())))
+            else:
+                multi_hit_faces.append(fid)
 
         summary["remaining_multi_hit_faces"] = len(multi_hit_faces)
         summary["remaining_single_hit_candidates"] = len(single_hit_candidates)
