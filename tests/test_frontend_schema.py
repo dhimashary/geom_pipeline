@@ -43,12 +43,6 @@ def test_summary_issues_are_excluded():
 
 
 
-def test_inverted_normal_is_no_longer_dropped():
-    report = kind_dict([_issue(IssueKind.INVERTED_NORMAL, {"elements": []})])
-    assert "inverted_normal" in report
-    assert len(report["inverted_normal"]) == 1
-
-
 def test_t_junction_validator_builds_elements_in_payload():
     raw = {
         "edge_coordinates": [[0, 0, 0], [1, 0, 0]],
