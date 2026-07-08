@@ -33,16 +33,18 @@ from geometry_pipeline.validators.mesh.non_planar_faces import NonPlanarFacesVal
 from geometry_pipeline.validators.mesh.overlapping_faces import OverlappingFacesValidator
 from geometry_pipeline.validators.mesh.possible_holes import PossibleHolesValidator
 from geometry_pipeline.validators.mesh.small_faces import SmallFacesValidator
+from geometry_pipeline.validators.mesh.collinear_faces import CollinearFacesValidator
 from geometry_pipeline.validators.mesh.t_junctions import TJunctionsValidator
 
 
 def _wave_based_pre_validators(tjunc, intersect) -> list:
     return [
+        NonPlanarFacesValidator(),
         DuplicateVerticesValidator(),
         DegenerateFacesValidator(),
-        NonPlanarFacesValidator(),
         OverlappingFacesValidator(),
         SmallFacesValidator(),
+        CollinearFacesValidator(),
         tjunc,
         intersect,
         BoundaryEdgesValidator(),
@@ -105,6 +107,7 @@ def _wave_based_final_validators(tjunc, intersect) -> list:
         DegenerateFacesValidator(),
         OverlappingFacesValidator(),
         SmallFacesValidator(),
+        CollinearFacesValidator(),
         tjunc,
         intersect,
         BoundaryEdgesValidator(),

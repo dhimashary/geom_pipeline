@@ -58,6 +58,16 @@ include = ["geometry_pipeline*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
+[tool.coverage.run]
+branch = true
+source = ["geometry_pipeline"]
+
+[tool.coverage.report]
+# Coverage (statement + branch) is measured and reported for information only,
+# mirroring the backend policy: a run succeeds when all tests pass, not when a
+# coverage threshold is met. No fail_under gate is enforced.
+show_missing = true
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"

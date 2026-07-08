@@ -18,6 +18,11 @@ class Tolerances:
     bbox_pad: float = 1e-9
     plc_offset: float = 0.01
     small_face_max_dim: float = 0.10
+    # ---- Collinear-face tolerance (metres)
+    # A face is (nearly) collinear when the maximum perpendicular deviation of
+    # any vertex from the line through its two farthest-apart vertices is below
+    # this value: the polygon has effectively collapsed to a line segment.
+    collinear_face_max_deviation_m: float = 1e-3
 
     # ---- Possible-hole tolerances
     # Max out-of-plane distance (metres) for a face to count as coplanar with a

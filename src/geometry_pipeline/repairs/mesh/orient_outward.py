@@ -22,7 +22,7 @@ from geometry_pipeline.repairs.mesh._common import (
 class FlipFacesIfMajorityInwardRepair(BaseRepair):
     name: ClassVar[str] = "flip_all_faces_if_majority_inward"
     accepts: ClassVar[set[str]] = {"mesh"}
-    handles: ClassVar[set[IssueKind]] = {IssueKind.INVERTED_NORMAL}
+    handles: ClassVar[set[IssueKind]] = set()
 
     def apply(
         self,

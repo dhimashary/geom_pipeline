@@ -17,9 +17,9 @@ class IssueKind(str, Enum):
     INTERSECTION = "intersection"
     BOUNDARY_EDGE = "boundary_edge"
     POSSIBLE_HOLE = "possible_hole"
-    INVERTED_NORMAL = "inverted_normal"
     SMALL_FACE = "small_face"
     OVERLAPPING_FACE = "overlapping_face"
+    COLLINEAR_FACE = "collinear_face"
 
 
 class Severity(str, Enum):

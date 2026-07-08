@@ -114,7 +114,7 @@ def orient_faces_consistently_by_adjacency(faces: list[Face], logger=None) -> Di
 class OrientFacesConsistentlyByAdjacencyRepair(BaseRepair):
     name: ClassVar[str] = "orient_faces_consistently_by_adjacency"
     accepts: ClassVar[set[str]] = {"mesh"}
-    handles: ClassVar[set[IssueKind]] = {IssueKind.INVERTED_NORMAL}
+    handles: ClassVar[set[IssueKind]] = set()
 
     def apply(
         self,
