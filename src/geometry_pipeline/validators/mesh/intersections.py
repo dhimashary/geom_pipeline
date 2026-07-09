@@ -1,6 +1,7 @@
 """Validator: detects segment-facet intersections (CDT-based)."""
 from __future__ import annotations
 
+import math
 from collections import defaultdict
 from typing import Any, Dict, List, Tuple
 from typing import ClassVar
@@ -13,6 +14,10 @@ from geometry_pipeline.geometry_math.geometry_math import (
     aabb_of_seg,
     aabb_of_tri,
     aabb_overlap,
+    dot,
+    newell_normal_from_points,
+    point_in_polygon_2d,
+    project_point_by_dropped_axis,
     segment_intersects_triangle,
     sub,
     vadd,
@@ -63,6 +68,124 @@ def _classify_segment_triangle_hit(t, u, v, *, t_eps=1e-9, bary_eps=1e-9):
         return "segment_face_interior_intersection"
     return "unknown"
 
+
+def _edge_is_face_side(u, v, face_ids):
+    """True if (u, v) is a consecutive boundary side of the face loop."""
+    n = len(face_ids)
+    for i in range(n):
+        if {face_ids[i], face_ids[(i + 1) % n]} == {u, v}:
+            return True
+    return False
+
+
+def _coplanar_segment_face_overlap(
+    p0,
+    p1,
+    face_ids,
+    points,
+    *,
+    coplanar_dist_tol,
+    min_overlap_len,
+    tol_2d=1e-9,
+):
+    """Detect an edge lying in a face's plane and overlapping its interior.
+
+    Moller-Trumbore rejects segments parallel to the triangle plane (det ~ 0),
+    so coplanar edge-on-face overlaps are invisible to it. This routine covers
+    that gap: it gates on coplanarity, projects the face polygon and the
+    segment to 2D by dropping the dominant normal axis, and measures the length
+    of the segment lying strictly inside the polygon.
+
+    Returns None when there is no interior overlap, otherwise a dict describing
+    the parametric enter/exit along ``p0 -> p1`` and the matching 3D points.
+    """
+    nrm = newell_normal_from_points(face_ids, points)
+    nn = math.sqrt(nrm[0] * nrm[0] + nrm[1] * nrm[1] + nrm[2] * nrm[2])
+    if nn <= 1e-18:
+        return None
+    normal = (nrm[0] / nn, nrm[1] / nn, nrm[2] / nn)
+    plane_point = points[face_ids[0] - 1]
+
+    # Coplanarity gate: both endpoints must lie in the face plane.
+    d0 = dot(sub(p0, plane_point), normal)
+    d1 = dot(sub(p1, plane_point), normal)
+    if abs(d0) > coplanar_dist_tol or abs(d1) > coplanar_dist_tol:
+        return None
+
+    # Drop the dominant normal axis for a stable 2D projection.
+    ax, ay, az = abs(normal[0]), abs(normal[1]), abs(normal[2])
+    if az >= ax and az >= ay:
+        dropped_axis = "z"
+    elif ay >= ax and ay >= az:
+        dropped_axis = "y"
+    else:
+        dropped_axis = "x"
+
+    poly2d = [project_point_by_dropped_axis(points[pid - 1], dropped_axis) for pid in face_ids]
+    s0 = project_point_by_dropped_axis(p0, dropped_axis)
+    s1 = project_point_by_dropped_axis(p1, dropped_axis)
+
+    dx = s1[0] - s0[0]
+    dy = s1[1] - s0[1]
+    seg_len2d = math.sqrt(dx * dx + dy * dy)
+    if seg_len2d <= tol_2d:
+        return None
+
+    # Parametric cut points along the segment: endpoints plus every crossing
+    # with a polygon edge.
+    cuts = [0.0, 1.0]
+    n = len(poly2d)
+    for i in range(n):
+        a2 = poly2d[i]
+        b2 = poly2d[(i + 1) % n]
+        ex = b2[0] - a2[0]
+        ey = b2[1] - a2[1]
+        den = dx * ey - dy * ex
+        if abs(den) <= tol_2d:
+            continue  # segment parallel to this polygon edge
+        apx = a2[0] - s0[0]
+        apy = a2[1] - s0[1]
+        s = (apx * ey - apy * ex) / den   # param along the segment
+        t = (apx * dy - apy * dx) / den   # param along the polygon edge
+        if -tol_2d <= s <= 1.0 + tol_2d and -tol_2d <= t <= 1.0 + tol_2d:
+            cuts.append(min(1.0, max(0.0, s)))
+
+    cuts = sorted({round(c, 12) for c in cuts})
+
+    # Sum the sub-intervals whose midpoint falls strictly inside the polygon.
+    # Boundary-coincident intervals classify as "boundary" and are excluded, so
+    # an edge merely running along a polygon boundary is not reported here.
+    inside_len = 0.0
+    t_enter = None
+    t_exit = None
+    for i in range(len(cuts) - 1):
+        sa = cuts[i]
+        sb = cuts[i + 1]
+        if sb - sa <= tol_2d:
+            continue
+        sm = 0.5 * (sa + sb)
+        mid = (s0[0] + sm * dx, s0[1] + sm * dy)
+        if point_in_polygon_2d(poly2d, mid, tol=tol_2d) != "inside":
+            continue
+        inside_len += (sb - sa) * seg_len2d
+        if t_enter is None:
+            t_enter = sa
+        t_exit = sb
+
+    if t_enter is None or inside_len < min_overlap_len:
+        return None
+
+    seg3 = sub(p1, p0)
+    return {
+        "t_enter": float(t_enter),
+        "t_exit": float(t_exit),
+        "overlap_length": float(inside_len),
+        "enter": vadd(p0, vmul(seg3, t_enter)),
+        "exit": vadd(p0, vmul(seg3, t_exit)),
+        "mid": vadd(p0, vmul(seg3, 0.5 * (t_enter + t_exit))),
+    }
+
+
 def detect_segment_facet_intersections_cdt_mesh(
     mesh: Mesh,
     *,
@@ -72,9 +195,12 @@ def detect_segment_facet_intersections_cdt_mesh(
     bbox_pad=1e-9,
     max_reports=200,
     skip_warped_faces=True,
+    coplanar_dist_tol=1e-4,
+    min_coplanar_overlap_len=1e-6,
 ) -> List[Dict[str, Any]]:
     points = [(v.x, v.y, v.z) for v in mesh.vertices]
     tri_list = []
+    face_polys = []
 
     for fi, face in enumerate(mesh.faces):
         vids = [int(i) for i in face.vertex_indices]
@@ -93,6 +219,22 @@ def detect_segment_facet_intersections_cdt_mesh(
             planar_flag = pstat
             if skip_warped_faces and pstat == "fatal":
                 continue
+
+        pts3 = [points[pid - 1] for pid in poly]
+        face_polys.append({
+            "fid": getattr(face, "fid", fi),
+            "vids": poly,
+            "vset": set(poly),
+            "aabb": (
+                min(p[0] for p in pts3),
+                min(p[1] for p in pts3),
+                min(p[2] for p in pts3),
+                max(p[0] for p in pts3),
+                max(p[1] for p in pts3),
+                max(p[2] for p in pts3),
+            ),
+            "planar_flag": planar_flag,
+        })
 
         if len(poly) == 3:
             tris = [poly[:]]
@@ -174,6 +316,49 @@ def detect_segment_facet_intersections_cdt_mesh(
             if len(reports) >= max_reports:
                 return reports
 
+    # Second pass: coplanar edge-on-face overlaps. Moller-Trumbore rejects
+    # segments parallel to a face plane (det ~ 0), so an edge lying flat on a
+    # face never appears above. Detect those interior overlaps here at polygon
+    # granularity (one report per overlapping edge/face pair).
+    for (u, v) in edge_set:
+        P0 = points[u - 1]
+        P1 = points[v - 1]
+        seg_bb = aabb_of_seg(P0, P1)
+
+        for finfo in face_polys:
+            if _edge_is_face_side(u, v, finfo["vids"]):
+                continue  # the edge is one of this face's own boundary sides
+            if not aabb_overlap(seg_bb, finfo["aabb"], pad=bbox_pad):
+                continue
+
+            overlap = _coplanar_segment_face_overlap(
+                P0,
+                P1,
+                finfo["vids"],
+                points,
+                coplanar_dist_tol=coplanar_dist_tol,
+                min_overlap_len=min_coplanar_overlap_len,
+                tol_2d=bbox_pad,
+            )
+            if overlap is None:
+                continue
+
+            reports.append({
+                "edge": (u, v),
+                "edge_coordinates": [P0, P1],
+                "edge_fids": sorted(edge_to_faces[(u, v) if u < v else (v, u)]),
+                "facet_fid": finfo["fid"],
+                "facet_fid_coordinates": [points[vid - 1] for vid in finfo["vids"]],
+                "point": overlap["mid"],
+                "overlap_coordinates": [overlap["enter"], overlap["exit"]],
+                "overlap_length": overlap["overlap_length"],
+                "t_param": overlap["t_enter"],
+                "hit_type": "coplanar_segment_face_overlap",
+                "facet_planarity_flag": finfo["planar_flag"],
+            })
+            if len(reports) >= max_reports:
+                return reports
+
     return reports
 
 
@@ -190,6 +375,8 @@ class IntersectionsValidator(BaseValidator):
             eps=ctx.tolerances.intersection_eps,
             bbox_pad=ctx.tolerances.bbox_pad,
             max_reports=ctx.tolerances.max_reports,
+            coplanar_dist_tol=ctx.tolerances.overlap_coplanar_dist_m,
+            min_coplanar_overlap_len=ctx.tolerances.planarity_split,
         )
 
     def severity_of(self, payload: dict) -> Severity:
