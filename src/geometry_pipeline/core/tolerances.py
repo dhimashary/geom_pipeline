@@ -13,7 +13,7 @@ class Tolerances:
     planarity_fatal_m: float = 1e-3
     planarity_split: float = 1e-6
     t_junction: float = 1e-2
-    clipping: float = 1e-9
+    clipping: float = 1e-6
     intersection_eps: float = 1e-10
     bbox_pad: float = 1e-9
     plc_offset: float = 0.01

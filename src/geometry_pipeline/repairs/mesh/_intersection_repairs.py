@@ -386,28 +386,8 @@ def repair_plc_single_splits_iterative(
         for r in endpoint_face_hits:
             hits_by_face[r["facet_fid"]].append(r)
 
-        # A single vertex kissing a face is reported once PER incident edge
-        # (each incident edge's endpoint lands on the face), so one physical
-        # touch point can appear as several hits on the same face. Collapse
-        # reports that resolve to the *same* touching vertex before deciding
-        # single- vs multi-hit: a lone touch vertex is then routed to the
-        # (implemented) single-split repair instead of the multi-hit path,
-        # which only handles collinear chains of *distinct* touch points.
-        multi_hit_faces = []
-        single_hit_candidates = []
-        for fid, rs in hits_by_face.items():
-            reps_by_vid = {}
-            for r in rs:
-                touch_vid, _ = _endpoint_vids_from_edge_t(
-                    r["edge"], r["t_param"], t_eps=1e-9
-                )
-                key = touch_vid if touch_vid is not None else id(r)
-                reps_by_vid.setdefault(key, r)
-
-            if len(reps_by_vid) == 1:
-                single_hit_candidates.append(next(iter(reps_by_vid.values())))
-            else:
-                multi_hit_faces.append(fid)
+        multi_hit_faces = [fid for fid, rs in hits_by_face.items() if len(rs) > 1]
+        single_hit_candidates = [rs[0] for fid, rs in hits_by_face.items() if len(rs) == 1]
 
         summary["remaining_multi_hit_faces"] = len(multi_hit_faces)
         summary["remaining_single_hit_candidates"] = len(single_hit_candidates)
@@ -426,43 +406,67 @@ def repair_plc_single_splits_iterative(
         diag = None
 
         # ---------------------------------------------------------
-        # Multi-hit faces: repair COLLINEAR chains, leave the rest alone.
-        #
-        # When several DISTINCT vertices touch the same face, there are two
-        # cases:
-        #   * the touch points are collinear (a chain along a line) -> this is
-        #     a repairable PLC violation, fixed via the collinear-chain split.
-        #   * the touch points are NOT collinear (e.g. a box resting on the
-        #     floor, where every base vertex touches one floor face) -> this is
-        #     intentional contact, not a defect, so we LEAVE IT ALONE.
-        #
-        # Non-collinear multi-hit faces must not block other repairs, so we only
-        # act on a collinear multi-hit face here; otherwise we fall through to
-        # single-hit repair.
+        # Priority 1: multi-hit same-face repair
         # ---------------------------------------------------------
-        collinear_multi_hit = None
-        for fid in sorted(multi_hit_faces, key=lambda f: len(hits_by_face[f]), reverse=True):
-            face = _find_face_by_fid(faces, fid)
-            cls = _classify_multi_hit_face_collinear(face, hits_by_face[fid], points, tol_m=0.01)
-            if cls["is_collinear"]:
-                collinear_multi_hit = (fid, hits_by_face[fid], cls)
-                break
+        if multi_hit_faces:
 
-        if collinear_multi_hit is not None:
-            chosen_fid, chosen_reports, cls = collinear_multi_hit
-            if logger:
-                logger.info(
-                    "[PLC REPAIR] multi-hit face=%d classified as COLLINEAR (max_dev=%.6g); repairing chain",
-                    chosen_fid,
-                    cls["max_dev"],
-                )
-            faces, points, changed, diag = repair_multi_hit_face_collinear_chain(
-                faces,
+            chosen_fid = max(multi_hit_faces, key=lambda fid: len(hits_by_face[fid]))
+
+            chosen_reports = hits_by_face[chosen_fid]
+
+            chosen_face = _find_face_by_fid(faces, chosen_fid)
+
+            cls = _classify_multi_hit_face_collinear(
+
+                chosen_face,
+
                 chosen_reports,
+
                 points,
-                logger=logger,
+
+                tol_m=0.01,
+
             )
 
+            if cls["is_collinear"]:
+
+                if logger:
+
+                    logger.info(
+
+                        "[PLC REPAIR] multi-hit face=%d classified as COLLINEAR (max_dev=%.6g)",
+
+                        chosen_fid,
+
+                        cls["max_dev"],
+
+                    )
+
+                faces, points, changed, diag = repair_multi_hit_face_collinear_chain(
+
+                    faces,
+
+                    chosen_reports,
+
+                    points,
+
+                    logger=logger,
+
+                )
+
+            else:
+
+                if logger:
+
+                    logger.info(
+
+                        "CURRENTLY ONLY COLLINEAR multi-hit repair is implemented; face=%d classified as NONCOLLINEAR (max_dev=%.6g); skipping for now",
+                        chosen_fid,
+                        cls["max_dev"],
+                    )
+        # ---------------------------------------------------------
+        # Priority 2: single-hit repair
+        # ---------------------------------------------------------
         elif single_hit_candidates:
             chosen_report = single_hit_candidates[0]
 
@@ -486,13 +490,9 @@ def repair_plc_single_splits_iterative(
             )
 
         else:
-            # Only non-collinear multi-hit faces remain (or no candidates at
-            # all): leave them alone and stop — do not "fix" intentional contact.
-            summary["stopped_reason"] = (
-                "only_multi_hit_faces_left_alone" if multi_hit_faces else "no_candidates"
-            )
+            summary["stopped_reason"] = "no_candidates"
             if logger:
-                logger.info("[PLC REPAIR] stop: %s", summary["stopped_reason"])
+                logger.info("[PLC REPAIR] stop: no repair candidates")
             return faces, points, changed_any, summary
 
         if not changed:
