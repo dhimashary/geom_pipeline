@@ -27,10 +27,7 @@ from geometry_pipeline.geometry_math.geometry_math import (
     uedge,
     project_point_by_dropped_axis,
     project_face_to_2d,
-    project_vid_to_2d,
     point_in_polygon_2d,
-    fit_chain_direction_2d,
-    line_segment_intersection_signed,
     polygon_area2_newell,
 )
 from geometry_pipeline.geometry_math.triangulation import triangulate_face_cdt_shapely
@@ -837,34 +834,9 @@ def _repair_single_endpoint_face_interior_touch_by_triangulation(
     return new_faces, True, diag
 
 
-def _insert_vertex_on_polygon_edge(poly_ids, edge_index, new_vid):
-    n = len(poly_ids)
-
-    if n < 2:
-        return poly_ids
-
-    return (
-        poly_ids[: edge_index + 1]
-        + [new_vid]
-        + poly_ids[edge_index + 1 :]
-    )
-
-
-# project_vid_to_2d moved to geometry_math
-
-
-# fit_chain_direction_2d moved to geometry_math
-
-
-# line_segment_intersection_signed moved to geometry_math
-
-
 from geometry_pipeline.repairs.mesh._common import (
-    create_or_reuse_boundary_point_on_edge,
     move_touching_endpoint_off_face,
     _endpoint_vids_from_edge_t,
-    compute_face_unit_normal,
-    offset_point_along_vector,
     _find_face_by_fid,
 )
 

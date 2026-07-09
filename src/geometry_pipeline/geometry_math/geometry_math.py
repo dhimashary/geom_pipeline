@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import math
-import numpy as np
 from typing import Iterable, List, Tuple
 
 
@@ -379,52 +378,6 @@ def point_segment_distance_2d(p, a, b):
     return math.sqrt(dx * dx + dy * dy)
 
 
-def fit_chain_direction_2d(chain_pts_2d):
-    arr = np.asarray(chain_pts_2d, dtype=float)
-    c = arr.mean(axis=0)
-
-    if len(arr) == 1:
-        return (float(c[0]), float(c[1])), (1.0, 0.0)
-
-    if len(arr) == 2:
-        d = arr[1] - arr[0]
-        n = np.linalg.norm(d)
-        if n <= 0.0:
-            return (float(c[0]), float(c[1])), (1.0, 0.0)
-        d /= n
-        return (float(c[0]), float(c[1])), (float(d[0]), float(d[1]))
-
-    centered = arr - c
-    cov = centered.T @ centered
-    vals, vecs = np.linalg.eigh(cov)
-    d = vecs[:, np.argmax(vals)]
-    n = np.linalg.norm(d)
-    if n <= 0.0:
-        return (float(c[0]), float(c[1])), (1.0, 0.0)
-    d /= n
-    return (float(c[0]), float(c[1])), (float(d[0]), float(d[1]))
-
-
-def line_segment_intersection_signed(p0, d, a, b, tol=1e-12):
-    ex = b[0] - a[0]
-    ey = b[1] - a[1]
-
-    den = d[0] * ey - d[1] * ex
-    if abs(den) <= tol:
-        return None
-
-    apx = a[0] - p0[0]
-    apy = a[1] - p0[1]
-
-    s = (apx * ey - apy * ex) / den
-    t = (apx * d[1] - apy * d[0]) / den
-
-    if t < -tol or t > 1.0 + tol:
-        return None
-
-    return (s, t)
-
-
 __all__ = [
     "aabb_of_seg",
     "aabb_of_tri",
@@ -448,8 +401,6 @@ __all__ = [
     "project_vid_to_2d",
     "point_in_polygon_2d",
     "point_segment_distance_2d",
-    "fit_chain_direction_2d",
-    "line_segment_intersection_signed",
     "uedge",
     "unit",
     "vadd",

@@ -254,48 +254,6 @@ def _endpoint_vids_from_edge_t(edge, t, *, t_eps=1e-9):
 # app.geometry.geometry_math.geometry_math
 
 
-def create_or_reuse_boundary_point_on_edge(
-    poly_ids,
-    poly2d,
-    edge_index,
-    tseg,
-    points,
-    *,
-    merge_tol_2d=1e-8,
-):
-    n = len(poly_ids)
-
-    a_vid = poly_ids[edge_index]
-    b_vid = poly_ids[(edge_index + 1) % n]
-
-    a2 = poly2d[edge_index]
-    b2 = poly2d[(edge_index + 1) % n]
-
-    hit2 = (
-        a2[0] + tseg * (b2[0] - a2[0]),
-        a2[1] + tseg * (b2[1] - a2[1]),
-    )
-
-    da = math.sqrt((hit2[0] - a2[0]) ** 2 + (hit2[1] - a2[1]) ** 2)
-    db = math.sqrt((hit2[0] - b2[0]) ** 2 + (hit2[1] - b2[1]) ** 2)
-
-    if da <= merge_tol_2d:
-        return a_vid, points, True
-    if db <= merge_tol_2d:
-        return b_vid, points, True
-
-    a3 = points[a_vid - 1]
-    b3 = points[b_vid - 1]
-    new_p3 = (
-        a3[0] + tseg * (b3[0] - a3[0]),
-        a3[1] + tseg * (b3[1] - a3[1]),
-        a3[2] + tseg * (b3[2] - a3[2]),
-    )
-
-    points = points + [new_p3]
-    return len(points), points, False
-
-
 def move_touching_endpoint_off_face(
     faces,
     points,
