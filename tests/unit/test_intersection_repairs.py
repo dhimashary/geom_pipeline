@@ -16,18 +16,26 @@ from geometry_pipeline.core.ir import Face, Mesh, Vertex
 from geometry_pipeline.repairs.mesh._intersection_repairs import (
     _boundary_chain,
     _build_edge_face_adjacency,
+    _classify_multi_hit_face_collinear,
     _clip_face_loop_against_plane,
     _face_fid,
     _face_vids,
     _plane_from_face,
     _project_face_and_point_to_2d,
+    _repair_single_endpoint_face_interior_touch,
+    _repair_single_endpoint_face_interior_touch_by_triangulation,
     _reverse_face_vids,
     _set_face_vids,
     _signed_distance_to_plane,
     _split_face_at_single_interior_vertex,
     _visible_boundary_vertices_from_point,
     collect_face_component_from_seed_faces,
+    orient_faces_consistently_by_adjacency,
+    repair_multi_hit_face_collinear_chain,
+    repair_plc_by_offset_iterative,
+    repair_plc_single_splits_iterative,
 )
+from geometry_pipeline.repairs.mesh._common import _endpoint_vids_from_edge_t
 from geometry_pipeline.repairs.mesh.repair_intersections import (
     RepairPlcSingleSplitsRepair,
     TrimSegmentFaceIntersectionsRepair,
@@ -206,3 +214,147 @@ def test_single_splits_repair_runs_over_intersection(ctx, intersecting_mesh):
     assert isinstance(new_mesh, Mesh)
     assert "remaining_intersections" in result.details
     assert "changed" in result.details
+
+
+# --- Endpoint-touch PLC repairs (called directly with hand-built reports) ----
+
+# A large triangle in z=0 plus one vertex (id 4) sitting inside its interior.
+TRI_PTS = [(0.0, 0.0, 0.0), (2.0, 0.0, 0.0), (0.0, 2.0, 0.0), (0.5, 0.5, 0.0)]
+TRI_IDS = [1, 2, 3]
+
+
+def _endpoint_report(facet_fid=0):
+    # An edge (4->5) whose endpoint vertex 4 lands inside triangle face `fid`.
+    return {
+        "hit_type": "endpoint_face_interior_touch",
+        "facet_fid": facet_fid,
+        "edge": (4, 5),
+        "t_param": 0.0,  # endpoint is vertex 4
+        "point": [0.5, 0.5, 0.0],
+    }
+
+
+def test_endpoint_vids_from_edge_t():
+    assert _endpoint_vids_from_edge_t((4, 5), 0.0) == (4, 5)
+    assert _endpoint_vids_from_edge_t((4, 5), 1.0) == (5, 4)
+    assert _endpoint_vids_from_edge_t((4, 5), 0.5) == (None, None)
+
+
+def test_single_endpoint_split_repairs_touched_face():
+    faces = [_face(TRI_IDS)]
+    new_faces, changed, diag = _repair_single_endpoint_face_interior_touch(
+        faces, _endpoint_report(), list(TRI_PTS)
+    )
+    assert changed is True
+    assert diag["status"] == "ok"
+    assert diag["inserted_vid"] == 4
+    assert len(new_faces) >= 2  # face split into multiple
+
+
+def test_single_endpoint_split_rejects_wrong_hit_type():
+    report = {**_endpoint_report(), "hit_type": "segment_face_interior_intersection"}
+    faces = [_face(TRI_IDS)]
+    _, changed, diag = _repair_single_endpoint_face_interior_touch(faces, report, list(TRI_PTS))
+    assert changed is False
+    assert diag["status"] == "wrong_type"
+
+
+def test_single_endpoint_split_reports_missing_face():
+    report = _endpoint_report(facet_fid=99)  # no such face index
+    faces = [_face(TRI_IDS)]
+    _, changed, diag = _repair_single_endpoint_face_interior_touch(faces, report, list(TRI_PTS))
+    assert changed is False
+    assert diag["status"] == "missing_face"
+
+
+def test_single_endpoint_split_by_triangulation():
+    faces = [_face(TRI_IDS)]
+    new_faces, changed, diag = _repair_single_endpoint_face_interior_touch_by_triangulation(
+        faces, _endpoint_report(), list(TRI_PTS)
+    )
+    assert changed is True
+    assert diag["status"] == "ok"
+    assert diag["n_output_tris"] >= 1
+
+
+def test_plc_single_splits_iterative_applies_and_converges():
+    faces = [_face(TRI_IDS)]
+    calls = {"n": 0}
+
+    def supplier(_f, _p):
+        calls["n"] += 1
+        return [_endpoint_report()] if calls["n"] == 1 else []
+
+    _faces, _points, changed, summary = repair_plc_single_splits_iterative(
+        faces, list(TRI_PTS), (0.5, 0.5, 5.0), plc_report_supplier=supplier
+    )
+    assert changed is True
+    assert summary["applied_repairs"] == 1
+    assert summary["stopped_reason"] == "no_plc_hits"
+
+
+def test_plc_offset_iterative_early_returns():
+    faces = [_face(TRI_IDS)]
+    # No hits at all.
+    _, _, changed, summary = repair_plc_by_offset_iterative(
+        faces, list(TRI_PTS), plc_report_supplier=lambda f, p: []
+    )
+    assert changed is False
+    assert summary["stopped_reason"] == "no_plc_hits"
+
+    # Hits present but none are endpoint-face touches.
+    other = [{"hit_type": "segment_face_interior_intersection"}]
+    _, _, changed2, summary2 = repair_plc_by_offset_iterative(
+        faces, list(TRI_PTS), plc_report_supplier=lambda f, p: other
+    )
+    assert changed2 is False
+    assert summary2["stopped_reason"] == "no_endpoint_face_interior_touch"
+
+
+# --- Multi-hit collinear classification / repair ----------------------------
+
+def test_classify_multi_hit_face_collinear_two_points_are_collinear():
+    face = _face(SQUARE_IDS)
+    reports = [{"point": [0.3, 0.5, 0.0]}, {"point": [0.6, 0.5, 0.0]}]
+    cls = _classify_multi_hit_face_collinear(face, reports, SQUARE_PTS)
+    assert cls["is_collinear"] is True
+
+
+def test_classify_multi_hit_face_needs_at_least_two_points():
+    face = _face(SQUARE_IDS)
+    cls = _classify_multi_hit_face_collinear(face, [{"point": [0.3, 0.5, 0.0]}], SQUARE_PTS)
+    assert cls["is_collinear"] is False
+    assert cls["reason"] == "need_at_least_2_points"
+
+
+def test_classify_multi_hit_face_non_collinear_three_points():
+    face = _face(SQUARE_IDS)
+    reports = [
+        {"point": [0.2, 0.5, 0.0]},
+        {"point": [0.6, 0.5, 0.0]},
+        {"point": [0.5, 0.95, 0.0]},  # off the line
+    ]
+    cls = _classify_multi_hit_face_collinear(face, reports, SQUARE_PTS)
+    assert cls["is_collinear"] is False
+
+
+def test_repair_multi_hit_collinear_chain_splits_face():
+    faces = [_face(SQUARE_IDS)]
+    reports = [
+        {"facet_fid": 0, "point": [0.3, 0.5, 0.0]},
+        {"facet_fid": 0, "point": [0.6, 0.5, 0.0]},
+    ]
+    new_faces, _points, changed, diag = repair_multi_hit_face_collinear_chain(
+        faces, reports, list(SQUARE_PTS)
+    )
+    assert changed is True
+    assert diag["status"] == "ok"
+    assert len(new_faces) == 2  # face replaced by two sub-faces
+
+
+# --- Orientation by adjacency ------------------------------------------------
+
+def test_orient_faces_consistently_runs_on_cube(unit_cube):
+    faces = [_face(f.vertex_indices) for f in unit_cube.faces]
+    diag = orient_faces_consistently_by_adjacency(faces)
+    assert isinstance(diag, dict)
