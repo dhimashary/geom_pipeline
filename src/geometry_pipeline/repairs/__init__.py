@@ -1,4 +1,4 @@
-"""Public exports for the ten repair-step wrappers.
+"""Public exports for the repair-step wrappers.
 
 Concrete repair steps live under `mesh/` (they all operate on mesh geometry).
 Kind-agnostic infrastructure (`base`, `_common`) stays at this top level.
@@ -6,7 +6,6 @@ Kind-agnostic infrastructure (`base`, `_common`) stays at this top level.
 from geometry_pipeline.repairs.mesh.compact_vertices import CompactVerticesRepair
 from geometry_pipeline.repairs.mesh.deduplicate_vertices import DeduplicateVerticesRepair
 from geometry_pipeline.repairs.mesh.fix_t_junctions import FixTJunctionsIterativeRepair
-from geometry_pipeline.repairs.mesh.orient_consistent import OrientFacesConsistentlyByAdjacencyRepair
 from geometry_pipeline.repairs.mesh.orient_outward import FlipFacesIfMajorityInwardRepair
 from geometry_pipeline.repairs.mesh.remove_degenerate_faces import RemoveDegenerateFacesRepair
 from geometry_pipeline.repairs.mesh.repair_intersections import (
@@ -21,7 +20,6 @@ __all__ = [
     "DeduplicateVerticesRepair",
     "FixTJunctionsIterativeRepair",
     "FlipFacesIfMajorityInwardRepair",
-    "OrientFacesConsistentlyByAdjacencyRepair",
     "RemoveDegenerateFacesRepair",
     "RepairPlcByOffsetRepair",
     "RepairPlcSingleSplitsRepair",

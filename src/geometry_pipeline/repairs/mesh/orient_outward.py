@@ -2,7 +2,8 @@
 
 If more faces point toward the room centre than away, flip every face.
 Cheap and catches the common "OBJ exporter inverted everything" case.
-For local edge-by-edge consistency see ``orient_consistent.py``.
+For local edge-by-edge consistency see ``orient_faces_consistently_by_adjacency``
+in ``_intersection_repairs.py``.
 """
 from __future__ import annotations
 
