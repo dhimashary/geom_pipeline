@@ -40,8 +40,16 @@ class MeshObjExporter:
 
             faces_by_group_and_material: dict = defaultdict(lambda: defaultdict(list))
             for face in faces:
-                group = getattr(face, "group", "default")
-                group_material = getattr(face, "group_material", getattr(face, "material", "default"))
+                # Coerce missing/None group and material to "default" so the keys
+                # are always strings. This prevents emitting a literal
+                # ``usemtl None`` and avoids a TypeError when ``sorted()`` mixes
+                # None with str keys below.
+                group = getattr(face, "group", None) or "default"
+                group_material = (
+                    getattr(face, "group_material", None)
+                    or getattr(face, "material", None)
+                    or "default"
+                )
                 faces_by_group_and_material[group][group_material].append(face)
 
             # Write to a temporary file then atomically replace
