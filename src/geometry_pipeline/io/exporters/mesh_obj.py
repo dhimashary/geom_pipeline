@@ -14,13 +14,19 @@ logger = logging.getLogger(__name__)
 
 
 class MeshObjExporter:
+    def __init__(self, *, repaired: bool = True) -> None:
+        """``repaired=True`` writes ``<stem>_repaired.obj``; ``False`` writes the
+        plain ``<stem>.obj`` (raw/initial bundle)."""
+        self.repaired = repaired
+
     def path_for(self, base_path: Path) -> Path:
-        """Mirror legacy convention: write `<stem>_repaired.obj` next to the .geo."""
+        """Write ``<stem>_repaired.obj`` (repaired) or ``<stem>.obj`` (raw)."""
         base_path = Path(base_path)
         # ``base_path`` is an extension-less base; use ``.name`` (not ``.stem``)
         # so filenames containing dots (e.g. ``Vertigo_2.06_...``) are not
         # truncated by Path treating ``.06_...`` as a suffix.
-        return base_path.with_name(base_path.name + "_repaired.obj")
+        suffix = "_repaired.obj" if self.repaired else ".obj"
+        return base_path.with_name(base_path.name + suffix)
 
     def write(self, geom: Mesh, path: Path) -> None:
         points = [(v.x, v.y, v.z) for v in geom.vertices]

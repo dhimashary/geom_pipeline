@@ -23,13 +23,23 @@ from geometry_pipeline.io.exporters.mesh_obj import MeshObjExporter
 
 class MeshThreeDMExporter:
     logger = logging.getLogger(__name__)
+
+    def __init__(self, *, repaired: bool = True) -> None:
+        """``repaired=True`` writes ``<stem>_repaired.{3dm,obj,zip}``; ``False``
+        writes the plain ``<stem>.{3dm,obj,zip}`` (raw/initial bundle).
+
+        The ``.obj``/``.zip`` names are derived from the ``.3dm`` path in
+        ``write``, so this single flag controls all three outputs."""
+        self.repaired = repaired
+
     def path_for(self, base_path: Path) -> Path:
-        """Write `<stem>_repaired.3dm` next to the .geo/obj file."""
+        """Write `<stem>_repaired.3dm` (repaired) or `<stem>.3dm` (raw)."""
         base_path = Path(base_path)
         # ``base_path`` is an extension-less base; use ``.name`` (not ``.stem``)
         # so filenames containing dots (e.g. ``Vertigo_2.06_...``) are not
         # truncated by Path treating ``.06_...`` as a suffix.
-        return base_path.with_name(base_path.name + "_repaired.3dm")
+        suffix = "_repaired.3dm" if self.repaired else ".3dm"
+        return base_path.with_name(base_path.name + suffix)
 
     def write(self, geom: Mesh, path: Path) -> None:
         # Ensure OBJ exists (use the same convention as MeshObjExporter)

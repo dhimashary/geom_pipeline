@@ -1,7 +1,7 @@
 """Unit tests for the public facade metadata helpers in ``api``.
 
 ``list_issue_kinds`` is pure (no I/O), so it lives with the unit tests. The
-heavier ``repair_geometry`` / ``inspect_geometry`` entry points are exercised
+heavier ``repair_geometry`` / ``process_geometry`` entry points are exercised
 by the integration smoke test.
 """
 from __future__ import annotations

@@ -11,11 +11,26 @@ from geometry_pipeline.validators.base import Validator
 
 @dataclass
 class Stage:
-    """One ordered repair-then-detect stage of the pipeline."""
+    """One ordered repair-then-detect stage of the pipeline.
+
+    ``exporters`` turns the stage into an export point: after its repairs and
+    post-validators run, the pipeline writes these exporters against the
+    current (intermediate) mesh and the snapshots gathered so far. This lets a
+    single run emit intermediate artifacts (e.g. the raw or inspect bundle)
+    without a second pass. Empty by default, so ordinary stages are unaffected.
+
+    ``checkpoint`` additionally fires the ``on_checkpoint`` callback (from
+    ``ctx.extras``) after the exporters run, so callers can react mid-pipeline
+    (persist rows, report progress). An export point is not necessarily a
+    notify point: e.g. the raw stage exports the initial bundle but does not
+    notify, while the inspect checkpoint does both.
+    """
     name: str
     repairs: list[RepairStep] = field(default_factory=list)
     post_validators: list[Validator] = field(default_factory=list)
     fail_fast_on: set[IssueKind] = field(default_factory=set)
+    exporters: list[Exporter] = field(default_factory=list)
+    checkpoint: bool = False
 
 
 @dataclass

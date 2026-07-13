@@ -2,8 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import logging
-import tempfile
-from typing import Any
+from typing import Any, Callable, Optional
 
 # Internal imports — all private to the package; the facade is the public surface.
 from .io.registry import ImporterRegistry
@@ -11,7 +10,7 @@ from .core.context import Context
 from .core.tolerances import Tolerances
 from .core.issues import IssueKind
 from .pipeline.runner import run_pipeline
-from .profiles.wave_based import wave_based_profile, wave_based_inspect_profile
+from .profiles.wave_based import wave_based_profile
 from .reporting.frontend_schema import kind_dict, snapshot_report
 
 
@@ -96,25 +95,62 @@ def repair_geometry(
     )
 
 
-def inspect_geometry(
+def process_geometry(
     input_path: str | Path,
+    output_dir: str | Path,
     *,
-    output_dir: str | Path | None = None,
+    volume_name: str = "RoomVolume",
+    detect_cavities: bool = True,
+    on_checkpoint: Optional[Callable[[dict], None]] = None,
 ) -> GeometryResult:
+    """Run the merged wave-based pipeline in a single pass.
+
+    One run emits all geometry artifacts:
+      * the initial bundle ``<stem>.3dm`` + ``<stem>.zip`` (raw upload),
+      * the inspect checkpoint ``<stem>.geo`` + ``<stem>_inspect_issue.json``
+        (tjunc-fixed, pre-intersection-repair mesh), and
+      * the repaired bundle ``<stem>_repaired.{obj,3dm,geo,zip}`` +
+        ``<stem>_remaining_issue.json`` + ``<stem>_report.json``.
+
+    ``on_checkpoint``, if given, is invoked once when the inspect checkpoint
+    fires — *before* the repair finishes — with a dict
+    ``{"stage", "issue_report", "issue_count"}`` describing the initial
+    (AfterUpload) issues, so callers can persist them and report progress early.
+
+    The returned :class:`GeometryResult` describes the *repaired* (remaining)
+    state: ``report["post"]`` / ``issue_count`` reflect the final validation.
+    """
     in_path = Path(input_path)
+
+    def _raw_cb(stage_name: str, interim: Any) -> None:
+        if on_checkpoint is None:
+            return
+        checkpoint_report = kind_dict(interim.composite_issues)
+        on_checkpoint({
+            "stage": stage_name,
+            "issue_report": checkpoint_report,
+            "issue_count": _count_issues(checkpoint_report),
+        })
+
     try:
         geom = ImporterRegistry.for_extension(in_path.suffix).load(in_path)
-        profile = wave_based_inspect_profile()
-        ctx = Context(tolerances=Tolerances(), logger=_log, profile_name=getattr(profile, "name", None))
-        base = Path(output_dir) / in_path.stem if output_dir is not None else Path(tempfile.gettempdir()) / in_path.stem
+        profile = wave_based_profile(detect_cavities=detect_cavities, volume_name=volume_name)
+        ctx = Context(
+            tolerances=Tolerances(),
+            logger=_log,
+            profile_name=getattr(profile, "name", None),
+            extras={"on_checkpoint": _raw_cb} if on_checkpoint is not None else {},
+        )
+        base = Path(output_dir) / in_path.stem
         result = run_pipeline(geom, profile, base, ctx)
     except Exception as exc:
         raise GeometryError(str(exc)) from exc
 
-    issue_report = kind_dict(result.composite_issues)
+    final_snap = getattr(result, "final", None)
+    issue_report = kind_dict(final_snap.issues if final_snap else [])
     report = snapshot_report(result)
     return GeometryResult(
-        outputs={},
+        outputs=_collect_outputs(result),
         issue_report=issue_report,
         report=report,
         issue_count=_count_issues(issue_report),

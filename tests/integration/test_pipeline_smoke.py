@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from geometry_pipeline.api import GeometryResult, repair_geometry
+from geometry_pipeline.api import GeometryResult, process_geometry, repair_geometry
 from geometry_pipeline.core.issues import IssueKind
 
 
@@ -49,3 +49,52 @@ def test_report_is_serialisable(result):
     # The report/issue payloads must be JSON-native (no numpy leaking through).
     json.dumps(result.issue_report)
     json.dumps(result.report)
+
+
+# --- merged single-pass pipeline (process_geometry) --------------------------
+
+
+@pytest.fixture
+def merged_run(real_room_obj, tmp_path):
+    """Run the merged pipeline once and capture the checkpoint payload(s)."""
+    pytest.importorskip("shapely")
+    seen: list[dict] = []
+    result = process_geometry(
+        real_room_obj,
+        tmp_path,
+        detect_cavities=False,
+        on_checkpoint=seen.append,
+    )
+    return result, seen, tmp_path
+
+
+def test_merged_fires_checkpoint_once_with_initial_issues(merged_run):
+    _, seen, _ = merged_run
+    # The inspect checkpoint fires exactly once, before the repair finishes.
+    assert len(seen) == 1
+    payload = seen[0]
+    assert payload["stage"] == "t_junctions"
+    assert payload["issue_count"] > 0
+    assert set(payload["issue_report"]) == {k.value for k in IssueKind}
+
+
+def test_merged_emits_checkpoint_and_repaired_artifacts(merged_run):
+    _, _, tmp_path = merged_run
+    names = {p.name for p in tmp_path.rglob("*") if p.is_file()}
+    stem = "vert2.0.6"
+    # inspect checkpoint (initial 3dm/zip is produced by the backend
+    # map_to_3dm_and_geo flow, not the pipeline)
+    assert f"{stem}.geo" in names
+    assert f"{stem}_inspect_issue.json" in names
+    # repaired bundle + remaining report
+    assert f"{stem}_repaired.geo" in names
+    assert f"{stem}_repaired.zip" in names
+    assert f"{stem}_remaining_issue.json" in names
+
+
+def test_merged_result_describes_remaining_state(merged_run):
+    result, _, _ = merged_run
+    assert isinstance(result, GeometryResult)
+    assert set(result.issue_report) == {k.value for k in IssueKind}
+    assert "post" in result.report
+

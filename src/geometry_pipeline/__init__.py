@@ -6,7 +6,7 @@ is an implementation detail and may change without notice.
 
 from .api import (
     repair_geometry,
-    inspect_geometry,
+    process_geometry,
     list_issue_kinds,
     GeometryResult,
     IssueInfo,
@@ -16,7 +16,7 @@ from .api import (
 
 __all__ = [
     "repair_geometry",
-    "inspect_geometry",
+    "process_geometry",
     "list_issue_kinds",
     "GeometryResult",
     "IssueInfo",

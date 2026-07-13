@@ -95,6 +95,50 @@ class PipelineFailFastError(RuntimeError):
         self.issues = issues
 
 
+def run_checkpoint_exporters(
+    geom: Geometry,
+    stage: Stage,
+    snapshots: list,
+    repairs: RepairReport,
+    output_path: Path,
+    ctx: Context,
+) -> None:
+    """Fire a stage's exporters against the intermediate mesh.
+
+    The interim ``PipelineResult`` carries only the snapshots gathered so far,
+    so its ``composite_issues`` reflects the mesh *at this point* (no later or
+    FINAL snapshots leak in). When ``stage.checkpoint`` is set, an optional
+    ``ctx.extras['on_checkpoint']`` callback is invoked afterwards as
+    ``cb(stage_name, interim_result)`` so callers (e.g. the backend) can react
+    mid-pipeline (write DB rows, bump progress). Export points that are not
+    checkpoints (e.g. the raw stage) write their files without notifying.
+    """
+    interim = PipelineResult(
+        geometry=geom,
+        snapshots=list(snapshots),
+        repairs=repairs,
+        output_path=str(output_path),
+    )
+    for exporter in stage.exporters:
+        if hasattr(exporter, "set_pipeline_result"):
+            try:
+                exporter.set_pipeline_result(interim)
+            except Exception:
+                ctx.logger.exception("[pipeline] checkpoint exporter.set_pipeline_result failed")
+        target = getattr(exporter, "path_for", lambda p: p)(output_path)
+        exporter.write(geom, target)
+        ctx.logger.info("[pipeline] export(%s) wrote %s", stage.name, target)
+
+    if not stage.checkpoint:
+        return
+    cb = ctx.extras.get("on_checkpoint") if getattr(ctx, "extras", None) else None
+    if cb is not None:
+        try:
+            cb(stage.name, interim)
+        except Exception:
+            ctx.logger.exception("[pipeline] on_checkpoint callback failed for stage %s", stage.name)
+
+
 def run_pipeline(
     geom: Geometry,
     profile: SimulationProfile,
@@ -122,10 +166,17 @@ def run_pipeline(
     accumulated_issues = list(pre.issues)
     logger.warning("Pipeline %r: completed PRE-validation with %d issue(s)", profile.name, len(pre.issues))
 
+    # Ensure the output directory exists before any (possibly mid-pipeline)
+    # checkpoint export writes to it.
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
     for stage in profile.stages:
         geom, snap = run_stage(geom, stage, ctx, repairs, accumulated_issues)
         snapshots.append(snap)
         accumulated_issues = list(snap.issues)
+        if stage.exporters:
+            run_checkpoint_exporters(geom, stage, snapshots, repairs, output_path, ctx)
 
     logger.warning("Pipeline %r: completed all stages, starting FINAL validation", profile.name)
     final = run_validators(
@@ -136,8 +187,6 @@ def run_pipeline(
     logger.warning("Pipeline %r: completed FINAL validation with %d issue(s)", profile.name, len(final.issues))
 
     logger.warning("Pipeline %r: starting export to %s", profile.name, output_path)
-    output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
 
     pipeline_result = PipelineResult(
         geometry=geom,

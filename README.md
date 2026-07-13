@@ -62,15 +62,6 @@ print(result.outputs)       # {"obj": "out/room.obj", "geo": "out/room.geo", ...
 print(result.report)        # {"pre": {...}, "post": {...}, "repairs": {...}}
 ```
 
-### Inspect only (no geometry export)
-
-```python
-from geometry_pipeline import inspect_geometry
-
-result = inspect_geometry("room.obj")
-print(result.issue_report)  # frontend-shaped dict keyed by issue type
-```
-
 Both functions return a `GeometryResult`:
 
 | Field          | Meaning                                                        |
@@ -91,7 +82,7 @@ geometry-pipeline/
 ├─ pyproject.toml              # packaging, deps, pytest config
 ├─ Dockerfile                  # multi-stage build (compiles native kernel)
 ├─ src/geometry_pipeline/
-│  ├─ api.py                   # PUBLIC facade: repair_geometry / inspect_geometry
+│  ├─ api.py                   # PUBLIC facade: repair_geometry / process_geometry
 │  ├─ __init__.py              # re-exports the facade
 │  ├─ py.typed                 # PEP 561 type marker
 │  ├─ core/                    # domain layer (stdlib only)
