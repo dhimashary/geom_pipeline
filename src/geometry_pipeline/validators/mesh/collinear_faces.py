@@ -19,7 +19,7 @@ from typing import ClassVar
 
 from geometry_pipeline.core.context import Context
 from geometry_pipeline.core.ir import Mesh
-from geometry_pipeline.core.issues import IssueKind, Severity
+from geometry_pipeline.core.issues import IssueKind
 from geometry_pipeline.geometry_math.geometry_math import cross, distance, norm, sub, unit
 from geometry_pipeline.validators.base import BaseValidator
 
@@ -78,9 +78,6 @@ class CollinearFacesValidator(BaseValidator):
                 })
 
         return raw
-
-    def severity_of(self, payload: dict) -> Severity:
-        return Severity.WARN
 
     def payload_of(self, payload: dict) -> dict:
         return dict(payload)

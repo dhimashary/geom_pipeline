@@ -349,7 +349,7 @@ def detect_possible_holes_from_faces(
             continue
 
         elements = [{"type": "edge", "points": [list(edge[0]), list(edge[1])]} for edge in edge_loop]
-        loops.append({"elements": elements, "severity": "high"})
+        loops.append({"elements": elements})
 
     return loops
 

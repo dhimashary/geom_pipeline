@@ -3,11 +3,6 @@ from __future__ import annotations
 from geometry_pipeline.core.issues import Issue, IssueKind
 from geometry_pipeline.core.report import PipelineResult, ValidationSnapshot
 
-
-def _legacy_severity(i: Issue) -> str:
-    return {"fatal": "high", "warn": "medium"}.get(i.severity.value, "low")
-
-
 def _normalise_elements(i: Issue) -> list[dict]:
     """Read the validator-supplied `elements` shape — no per-kind logic.
 
@@ -26,7 +21,6 @@ def _normalise_elements(i: Issue) -> list[dict]:
 def _entry(i: Issue) -> dict:
     return {
         "elements": _normalise_elements(i),
-        "severity": _legacy_severity(i),
         "id": i.id,
     }
 

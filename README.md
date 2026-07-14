@@ -87,7 +87,7 @@ geometry-pipeline/
 │  ├─ py.typed                 # PEP 561 type marker
 │  ├─ core/                    # domain layer (stdlib only)
 │  │  ├─ ir.py                 #   geometry IR: Mesh, BRep, Face, Cavity, …
-│  │  ├─ issues.py             #   Issue, IssueKind, Severity, DetectionStage
+│  │  ├─ issues.py             #   Issue, IssueKind, DetectionStage
 │  │  ├─ profile.py            #   SimulationProfile + Stage dataclasses
 │  │  ├─ tolerances.py         #   numeric thresholds / caps
 │  │  ├─ context.py            #   per-run Context (tolerances, logger)

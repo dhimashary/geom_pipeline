@@ -17,7 +17,6 @@ from geometry_pipeline.core.issues import (
     DetectionStage,
     Issue,
     IssueKind,
-    Severity,
 )
 from geometry_pipeline.core.jsonable import to_jsonable
 from geometry_pipeline.core.report import (
@@ -32,19 +31,17 @@ from geometry_pipeline.core.tolerances import Tolerances
 # --- Issue -------------------------------------------------------------------
 
 def _issue(kind: IssueKind = IssueKind.T_JUNCTION, payload: dict | None = None) -> Issue:
-    return Issue.create(kind, Severity.WARN, DetectionStage.PRE, payload=payload or {})
+    return Issue.create(kind, DetectionStage.PRE, payload=payload or {})
 
 
 def test_issue_create_populates_fields():
     issue = Issue.create(
         IssueKind.INTERSECTION,
-        Severity.FATAL,
         DetectionStage.POST_STAGE,
         stage_name="repair_intersections",
         payload={"a": 1},
     )
     assert issue.kind is IssueKind.INTERSECTION
-    assert issue.severity is Severity.FATAL
     assert issue.stage is DetectionStage.POST_STAGE
     assert issue.stage_name == "repair_intersections"
     assert issue.payload == {"a": 1}
@@ -64,8 +61,8 @@ def test_issue_id_changes_with_kind_or_payload():
 
 
 def test_issue_id_ignores_severity_and_stage():
-    a = Issue.create(IssueKind.SMALL_FACE, Severity.WARN, DetectionStage.PRE, payload={"fid": 1})
-    b = Issue.create(IssueKind.SMALL_FACE, Severity.FATAL, DetectionStage.FINAL, payload={"fid": 1})
+    a = Issue.create(IssueKind.SMALL_FACE, DetectionStage.PRE, payload={"fid": 1})
+    b = Issue.create(IssueKind.SMALL_FACE, DetectionStage.FINAL, payload={"fid": 1})
     assert a.id == b.id
 
 

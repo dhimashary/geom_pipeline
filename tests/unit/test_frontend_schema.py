@@ -5,7 +5,6 @@ from geometry_pipeline.core.issues import (
     DetectionStage,
     Issue,
     IssueKind,
-    Severity,
 )
 from geometry_pipeline.reporting.frontend_schema import (
     kind_dict,
@@ -15,7 +14,7 @@ from geometry_pipeline.validators.mesh.t_junctions import TJunctionsValidator
 
 
 def _issue(kind: IssueKind, payload: dict | None = None) -> Issue:
-    return Issue.create(kind, Severity.WARN, DetectionStage.PRE, payload=payload or {})
+    return Issue.create(kind, DetectionStage.PRE, payload=payload or {})
 
 
 def test_every_issue_kind_is_mapped_so_none_is_silently_dropped():

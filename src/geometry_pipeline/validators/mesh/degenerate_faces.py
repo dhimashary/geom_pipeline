@@ -40,7 +40,6 @@ def detect_degenerate_faces_mesh(
                     "type": "face",
                     "points": [[coord[0], coord[1], coord[2]] for coord in coordinates],
                 },
-                "severity": "high",
             })
 
     return degenerate_faces
@@ -72,7 +71,6 @@ def detect_degenerate_faces(
                     "type": "face",
                     "points": [[coord[0], coord[1], coord[2]] for coord in coordinates],
                 },
-                "severity": "high",
             })
 
     return degenerate_faces

@@ -39,7 +39,6 @@ def run_validators(
             else:
                 issues.append(Issue.create(
                     kind=i.kind,
-                    severity=i.severity,
                     stage=when,
                     stage_name=stage_name,
                     payload=i.payload,

@@ -29,7 +29,7 @@ from typing import Any, ClassVar, Dict, List, Tuple
 
 from geometry_pipeline.core.context import Context
 from geometry_pipeline.core.ir import Mesh
-from geometry_pipeline.core.issues import IssueKind, Severity
+from geometry_pipeline.core.issues import IssueKind
 from geometry_pipeline.geometry_math.geometry_math import (
     aabb_of_tri,
     aabb_overlap,
@@ -223,7 +223,6 @@ def detect_overlapping_faces_mesh(
                         "points": [[c[0], c[1], c[2]] for c in coords_b],
                     },
                 ],
-                "severity": "high",
                 "details": {
                     "face_a_fid": fa["fid"],
                     "face_b_fid": fb["fid"],
@@ -253,8 +252,5 @@ class OverlappingFacesValidator(BaseValidator):
             max_reports=ctx.tolerances.max_reports,
         )
 
-    def severity_of(self, payload: dict) -> Severity:
-        return Severity.FATAL
-
     def payload_of(self, payload: dict) -> dict:
-        return {k: v for k, v in payload.items() if k != "severity"}
+        return payload

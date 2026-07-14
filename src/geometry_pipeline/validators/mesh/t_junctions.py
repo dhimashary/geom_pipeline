@@ -7,7 +7,7 @@ from typing import ClassVar
 
 from geometry_pipeline.core.context import Context
 from geometry_pipeline.core.ir import Mesh
-from geometry_pipeline.core.issues import IssueKind, Severity
+from geometry_pipeline.core.issues import IssueKind
 from geometry_pipeline.geometry_math.geometry_math import cross, dot, sub, uedge
 from geometry_pipeline.validators.base import BaseValidator
 
@@ -114,11 +114,6 @@ class TJunctionsValidator(BaseValidator):
             tol=ctx.tolerances.t_junction,
             max_reports=ctx.tolerances.max_reports,
         )
-
-    def severity_of(self, payload: dict) -> Severity:
-        # T-junctions are always fatal (PLC violation); the legacy detector
-        # does not emit a "severity" key.
-        return Severity.FATAL
 
     def payload_of(self, payload: dict) -> dict:
         # Build the frontend `elements` shape here so the report translator

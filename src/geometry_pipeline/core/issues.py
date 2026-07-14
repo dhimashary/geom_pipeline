@@ -21,12 +21,6 @@ class IssueKind(str, Enum):
     OVERLAPPING_FACE = "overlapping_face"
     COLLINEAR_FACE = "collinear_face"
 
-
-class Severity(str, Enum):
-    WARN = "warn"
-    FATAL = "fatal"
-
-
 class DetectionStage(str, Enum):
     """When in the pipeline an issue was observed."""
     PRE = "pre"
@@ -43,7 +37,6 @@ class Issue:
     """
     id: str
     kind: IssueKind
-    severity: Severity
     stage: DetectionStage
     stage_name: str = ""
     payload: dict = field(default_factory=dict)
@@ -52,7 +45,6 @@ class Issue:
     def create(
         cls,
         kind: IssueKind,
-        severity: Severity,
         stage: DetectionStage,
         stage_name: str = "",
         payload: dict | None = None,
@@ -66,7 +58,6 @@ class Issue:
         return cls(
             id=issue_id,
             kind=kind,
-            severity=severity,
             stage=stage,
             stage_name=stage_name,
             payload=payload,

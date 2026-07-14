@@ -48,7 +48,6 @@ def detect_duplicate_vertices(
                         "type": "vertex",
                         "points": [[coord[0], coord[1], coord[2]]],
                     },
-                    "severity": "medium",
                 })
 
     return duplicate_reports

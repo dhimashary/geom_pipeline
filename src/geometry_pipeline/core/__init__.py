@@ -14,7 +14,7 @@ from geometry_pipeline.core.ir import (
     Surface,
     Vertex,
 )
-from geometry_pipeline.core.issues import DetectionStage, Issue, IssueKind, Severity
+from geometry_pipeline.core.issues import DetectionStage, Issue, IssueKind
 from geometry_pipeline.core.profile import SimulationProfile, Stage
 from geometry_pipeline.core.report import PipelineResult, RepairReport, RepairResult, ValidationSnapshot
 from geometry_pipeline.core.tolerances import Tolerances
@@ -36,7 +36,6 @@ __all__ = [
     "PointCloud",
     "RepairReport",
     "RepairResult",
-    "Severity",
     "SimulationProfile",
     "SnapshotDiff",
     "Stage",

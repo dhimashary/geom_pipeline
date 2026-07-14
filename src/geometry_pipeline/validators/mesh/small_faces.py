@@ -15,7 +15,7 @@ from typing import ClassVar
 from geometry_pipeline.core.context import Context
 from geometry_pipeline.geometry_math.geometry_math import polygon_area_3d
 from geometry_pipeline.core.ir import Mesh, Face
-from geometry_pipeline.core.issues import IssueKind, Severity
+from geometry_pipeline.core.issues import IssueKind
 from geometry_pipeline.validators.base import BaseValidator
 
 
@@ -72,9 +72,6 @@ class SmallFacesValidator(BaseValidator):
                 })
 
         return raw
-
-    def severity_of(self, payload: dict) -> Severity:
-        return Severity.WARN
 
     def payload_of(self, payload: dict) -> dict:
         return dict(payload)

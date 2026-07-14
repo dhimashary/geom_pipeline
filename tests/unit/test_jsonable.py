@@ -9,7 +9,6 @@ from geometry_pipeline.core.issues import (
     DetectionStage,
     Issue,
     IssueKind,
-    Severity,
 )
 from geometry_pipeline.core.jsonable import to_jsonable
 
@@ -41,7 +40,6 @@ def test_numpy_payload_round_trips_as_json_numbers():
     }
     issue = Issue.create(
         IssueKind.INTERSECTION,
-        Severity.WARN,
         DetectionStage.PRE,
         payload=payload,
     )
@@ -61,7 +59,6 @@ def test_issue_id_deterministic_for_identical_numpy_input():
     def make() -> Issue:
         return Issue.create(
             IssueKind.DEGENERATE_FACE,
-            Severity.FATAL,
             DetectionStage.PRE,
             payload={"a": np.float32(2.5), "b": np.int64(7), "v": np.array([1.0, 2.0])},
         )

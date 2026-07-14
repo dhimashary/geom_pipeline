@@ -41,7 +41,6 @@ def detect_boundary_edges(
                     "type": "edge",
                     "points": [[coord_a[0], coord_a[1], coord_a[2]], [coord_b[0], coord_b[1], coord_b[2]]],
                 },
-                "severity": "medium",
             })
 
     return boundary_edges

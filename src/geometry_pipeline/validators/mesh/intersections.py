@@ -8,8 +8,8 @@ from typing import ClassVar
 
 from geometry_pipeline.core.context import Context
 from geometry_pipeline.core.ir import Mesh
-from geometry_pipeline.core.ir import Mesh, Face
-from geometry_pipeline.core.issues import IssueKind, Severity
+from geometry_pipeline.core.ir import Mesh
+from geometry_pipeline.core.issues import IssueKind
 from geometry_pipeline.geometry_math.geometry_math import (
     aabb_of_seg,
     aabb_of_tri,
@@ -378,9 +378,6 @@ class IntersectionsValidator(BaseValidator):
             coplanar_dist_tol=ctx.tolerances.overlap_coplanar_dist_m,
             min_coplanar_overlap_len=ctx.tolerances.planarity_split,
         )
-
-    def severity_of(self, payload: dict) -> Severity:
-        return Severity.FATAL
 
     def payload_of(self, payload: dict) -> dict:
         # Detector returns a `hit_type` discriminator; surface it as

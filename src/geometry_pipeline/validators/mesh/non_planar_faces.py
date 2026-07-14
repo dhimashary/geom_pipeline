@@ -34,13 +34,11 @@ def inspect_face_planarity_issues(
 
         if status in ("warning", "fatal"):
             coordinates = [unique_vertices[vid - 1] for vid in face.vertex_indices]
-            severity = "medium" if status == "warning" else "high"
             problematic_faces.append({
                 "elements": {
                     "type": "face",
                     "points": [[coord[0], coord[1], coord[2]] for coord in coordinates],
                 },
-                "severity": severity,
                 "details": {
                     "worst_vertex_deviation": max_dist_m,
                     "overall_spread_deviation": rms_dist_m,
@@ -74,13 +72,11 @@ def inspect_face_planarity_issues_mesh(
 
         if status in ("warning", "fatal"):
             coordinates = [points[vid - 1] for vid in vids]
-            severity = "medium" if status == "warning" else "high"
             problematic_faces.append({
                 "elements": {
                     "type": "face",
                     "points": [[coord[0], coord[1], coord[2]] for coord in coordinates],
                 },
-                "severity": severity,
                 "details": {
                     "worst_vertex_deviation": max_dist_m,
                     "overall_spread_deviation": rms_dist_m,
