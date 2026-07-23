@@ -67,6 +67,58 @@ def test_geo_export_writes_expected_markers(tmp_path, unit_cube):
     assert "Plane Surface(1)" in text
 
 
+def test_geo_export_writes_line_definitions(tmp_path, unit_cube):
+    """AC-034.1: line definitions for all edges in the processed geometry."""
+    out = tmp_path / "cube.geo"
+    GmshGeoExporter(detect_cavities=False).write(unit_cube, out)
+    
+    text = out.read_text()
+    # Assert Line(...) definitions are present (cube has 12 edges)
+    assert "Line(" in text
+    # Count Line definitions (should be ≥ 1 for each edge)
+    line_count = text.count("Line(")
+    assert line_count >= 12, f"Expected ≥12 Line definitions (cube has 12 edges), got {line_count}"
+
+
+def test_geo_export_writes_line_loops(tmp_path, unit_cube):
+    """AC-035.1: line loops for each face in the processed geometry."""
+    out = tmp_path / "cube.geo"
+    GmshGeoExporter(detect_cavities=False).write(unit_cube, out)
+    
+    text = out.read_text()
+    # Assert Line Loop(...) definitions are present (cube has 6 faces)
+    assert "Line Loop(" in text
+    # Count Line Loop definitions (should be ≥ 1 per face)
+    loop_count = text.count("Line Loop(")
+    assert loop_count >= 6, f"Expected ≥6 Line Loop definitions (cube has 6 faces), got {loop_count}"
+
+
+def test_geo_export_writes_line_definitions(tmp_path, unit_cube):
+    """AC-034.1: line definitions for all edges in the processed geometry."""
+    out = tmp_path / "cube.geo"
+    GmshGeoExporter(detect_cavities=False).write(unit_cube, out)
+    
+    text = out.read_text()
+    # Assert Line(...) definitions are present (cube has 12 edges)
+    assert "Line(" in text
+    # Count Line definitions (should be ≥ 1 for each edge)
+    line_count = text.count("Line(")
+    assert line_count >= 12, f"Expected ≥12 Line definitions (cube has 12 edges), got {line_count}"
+
+
+def test_geo_export_writes_line_loops(tmp_path, unit_cube):
+    """AC-035.1: line loops for each face in the processed geometry."""
+    out = tmp_path / "cube.geo"
+    GmshGeoExporter(detect_cavities=False).write(unit_cube, out)
+    
+    text = out.read_text()
+    # Assert Line Loop(...) definitions are present (cube has 6 faces)
+    assert "Line Loop(" in text
+    # Count Line Loop definitions (should be ≥ 1 per face)
+    loop_count = text.count("Line Loop(")
+    assert loop_count >= 6, f"Expected ≥6 Line Loop definitions (cube has 6 faces), got {loop_count}"
+
+
 # --- 3DM export --------------------------------------------------------------
 
 def test_three_dm_export_creates_non_empty_file(tmp_path, unit_cube):
