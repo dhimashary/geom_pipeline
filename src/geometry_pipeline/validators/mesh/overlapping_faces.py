@@ -116,6 +116,44 @@ def _tris_to_polygon(
     return merged
 
 
+def _is_interior_overlap(inter, poly_a, poly_b, interior_point_tolerance: float = 1e-6) -> bool:
+    """Check if intersection represents true interior overlap vs. just edge-touching.
+    
+    Edge-adjacent faces only touch at boundaries (edges). True overlap means:
+    1. The intersection is 2D (has area), not just a line/point
+    2. The intersection is NOT a thin sliver (high aspect ratio from a gap)
+    
+    This filters false positives from faces separated by tiny gaps.
+    """
+    # If intersection is a line or point (1-dimensional), it's just touching
+    if inter.is_empty or inter.geom_type in ("LineString", "MultiLineString", "Point", "MultiPoint"):
+        return False
+    
+    try:
+        inter_area = float(getattr(inter, "area", 0.0))
+        inter_length = float(getattr(inter, "length", 0.0))
+        
+        if inter_area <= 0.0 or inter_length <= 0.0:
+            return False
+        
+        # Detect thin slivers: if the intersection is very thin relative to its perimeter,
+        # it's likely just an edge artifact from a gap between faces.
+        # A thin vertical or horizontal strip from edge-touching will have:
+        # - Very small area
+        # - Long perimeter relative to area (high "aspect ratio")
+        # 
+        # Rough heuristic: for a true overlap, expect area/perimeter ratio > 0.01
+        # (for a 1x1 square, this is 1/4 = 0.25; for a 0.001x1 sliver, this is 0.001/2.002 ~ 0.0005)
+        area_perimeter_ratio = inter_area / inter_length
+        if area_perimeter_ratio < 0.001:  # Threshold for "too thin to be real overlap"
+            return False
+        
+        return True
+    except Exception:
+        # If we can't determine, assume it's valid to avoid discarding valid cases
+        return True
+
+
 def detect_overlapping_faces_mesh(
     mesh: Mesh,
     *,
@@ -209,6 +247,13 @@ def detect_overlapping_faces_mesh(
                 core = inter.buffer(-0.5 * sliver_width_m)
                 if core.is_empty or float(getattr(core, "area", 0.0)) <= min_overlap_area_m2:
                     continue
+
+            # Final check: ensure the intersection represents true interior overlap,
+            # not just edge-adjacent faces with a tiny gap. Edge-touching only
+            # produces intersection along boundaries (lines), while true overlap
+            # has interior points in both faces.
+            if not _is_interior_overlap(inter, poly_a, poly_b):
+                continue
 
             coords_a = [points[vid - 1] for vid in fa["vids"]]
             coords_b = [points[vid - 1] for vid in fb["vids"]]
