@@ -18,7 +18,7 @@ def test_list_issue_kinds_covers_every_kind():
 def test_list_issue_kinds_marks_repairable_kinds():
     by_kind = {info.kind: info for info in list_issue_kinds()}
     # These kinds have a repair step wired in the pipeline.
-    for kind in ("duplicate_vertex", "degenerate_face", "t_junction", "intersection"):
+    for kind in ("duplicate_vertex", "zero_area_face", "t_junction", "intersection"):
         assert by_kind[kind].repairable is True
     # Detection-only kinds have no repair.
     assert by_kind["small_face"].repairable is False

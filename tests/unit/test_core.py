@@ -56,7 +56,7 @@ def test_issue_id_is_deterministic_for_same_kind_and_payload():
 
 def test_issue_id_changes_with_kind_or_payload():
     base = _issue(IssueKind.SMALL_FACE, {"fid": 7})
-    assert base.id != _issue(IssueKind.DEGENERATE_FACE, {"fid": 7}).id
+    assert base.id != _issue(IssueKind.ZERO_AREA_FACE, {"fid": 7}).id
     assert base.id != _issue(IssueKind.SMALL_FACE, {"fid": 8}).id
 
 
@@ -83,7 +83,7 @@ def test_issuekind_values_are_stable_strings():
     # is a breaking change that must be caught.
     assert {k.value for k in IssueKind} == {
         "duplicate_vertex",
-        "degenerate_face",
+        "zero_area_face",
         "non_planar_face",
         "t_junction",
         "intersection",

@@ -1,4 +1,4 @@
-"""Drop faces classified as fatally degenerate (effectively zero area)."""
+"""Drop faces classified as fatally zero-area (effectively zero area)."""
 from __future__ import annotations
 
 import logging
@@ -12,7 +12,7 @@ from geometry_pipeline.core.report import RepairResult
 from geometry_pipeline.repairs.base import BaseRepair
 
 
-def remove_degenerate_faces_mesh(
+def remove_zero_area_faces_mesh(
     mesh: Mesh,
     *,
     fatal_area_tol: float = 1e-12,
@@ -49,10 +49,10 @@ def remove_degenerate_faces_mesh(
     return new_mesh, fatal_removed
 
 
-class RemoveDegenerateFacesRepair(BaseRepair):
-    name: ClassVar[str] = "remove_degenerate_faces"
+class RemoveZeroAreaFaceRepair(BaseRepair):
+    name: ClassVar[str] = "remove_zero_area_faces"
     accepts: ClassVar[set[str]] = {"mesh"}
-    handles: ClassVar[set[IssueKind]] = {IssueKind.DEGENERATE_FACE}
+    handles: ClassVar[set[IssueKind]] = {IssueKind.ZERO_AREA_FACE}
 
     def apply(
         self,
@@ -63,7 +63,7 @@ class RemoveDegenerateFacesRepair(BaseRepair):
     ) -> tuple[Mesh, RepairResult]:
         self.ensure_accepts(geom)
         before = len(geom.faces)
-        new_mesh, fatal_removed = remove_degenerate_faces_mesh(
+        new_mesh, fatal_removed = remove_zero_area_faces_mesh(
             geom,
             fatal_area_tol=ctx.tolerances.degenerate_area,
             min_altitude_tol=ctx.tolerances.degenerate_min_altitude_m,

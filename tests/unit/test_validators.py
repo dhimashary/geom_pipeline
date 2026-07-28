@@ -13,7 +13,7 @@ import pytest
 from geometry_pipeline.core.issues import IssueKind
 from geometry_pipeline.validators.mesh.boundary_edges import BoundaryEdgesValidator
 from geometry_pipeline.validators.mesh.collinear_faces import CollinearFacesValidator
-from geometry_pipeline.validators.mesh.degenerate_faces import DegenerateFacesValidator
+from geometry_pipeline.validators.mesh.degenerate_faces import ZeroAreaFaceValidator
 from geometry_pipeline.validators.mesh.duplicate_vertices import DuplicateVerticesValidator
 from geometry_pipeline.validators.mesh.intersections import IntersectionsValidator
 from geometry_pipeline.validators.mesh.non_planar_faces import NonPlanarFacesValidator
@@ -45,17 +45,17 @@ def test_duplicate_vertices_none_on_clean_cube(ctx, unit_cube):
     assert DuplicateVerticesValidator().detect(unit_cube, ctx) == []
 
 
-# --- degenerate_face ---------------------------------------------------------
+# --- zero_area_face ---------------------------------------------------------
 
-def test_degenerate_face_detected_for_zero_area_triangle(ctx):
+def test_zero_area_face_detected_for_zero_area_triangle(ctx):
     mesh = make_mesh([(0, 0, 0), (1, 0, 0), (2, 0, 0)], [[1, 2, 3]])
-    issues = DegenerateFacesValidator().detect(mesh, ctx)
+    issues = ZeroAreaFaceValidator().detect(mesh, ctx)
     assert len(issues) == 1
-    assert issues[0].kind is IssueKind.DEGENERATE_FACE
+    assert issues[0].kind is IssueKind.ZERO_AREA_FACE
 
 
-def test_degenerate_face_none_on_clean_cube(ctx, unit_cube):
-    assert DegenerateFacesValidator().detect(unit_cube, ctx) == []
+def test_zero_area_face_none_on_clean_cube(ctx, unit_cube):
+    assert ZeroAreaFaceValidator().detect(unit_cube, ctx) == []
 
 
 # --- non_planar_face ---------------------------------------------------------

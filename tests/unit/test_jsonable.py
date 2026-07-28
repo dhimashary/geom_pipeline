@@ -58,7 +58,7 @@ def test_numpy_payload_round_trips_as_json_numbers():
 def test_issue_id_deterministic_for_identical_numpy_input():
     def make() -> Issue:
         return Issue.create(
-            IssueKind.DEGENERATE_FACE,
+            IssueKind.ZERO_AREA_FACE,
             DetectionStage.PRE,
             payload={"a": np.float32(2.5), "b": np.int64(7), "v": np.array([1.0, 2.0])},
         )

@@ -7,7 +7,7 @@ from geometry_pipeline.repairs.mesh.compact_vertices import CompactVerticesRepai
 from geometry_pipeline.repairs.mesh.deduplicate_vertices import DeduplicateVerticesRepair
 from geometry_pipeline.repairs.mesh.fix_t_junctions import FixTJunctionsIterativeRepair
 from geometry_pipeline.repairs.mesh.orient_outward import FlipFacesIfMajorityInwardRepair
-from geometry_pipeline.repairs.mesh.remove_degenerate_faces import RemoveDegenerateFacesRepair
+from geometry_pipeline.repairs.mesh.remove_degenerate_faces import RemoveZeroAreaFaceRepair
 from geometry_pipeline.repairs.mesh.repair_intersections import (
     RepairPlcByOffsetRepair,
     RepairPlcSingleSplitsRepair,
@@ -20,7 +20,7 @@ __all__ = [
     "DeduplicateVerticesRepair",
     "FixTJunctionsIterativeRepair",
     "FlipFacesIfMajorityInwardRepair",
-    "RemoveDegenerateFacesRepair",
+    "RemoveZeroAreaFaceRepair",
     "RepairPlcByOffsetRepair",
     "RepairPlcSingleSplitsRepair",
     "SortVerticesDeterministicallyRepair",

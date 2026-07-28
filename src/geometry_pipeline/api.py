@@ -160,7 +160,7 @@ def process_geometry(
 # Short, human-readable description for every IssueKind the validators can emit.
 _ISSUE_DESCRIPTIONS: dict[IssueKind, str] = {
     IssueKind.DUPLICATE_VERTEX: "Two or more vertices share the same position.",
-    IssueKind.DEGENERATE_FACE: "A face has zero (or near-zero) area.",
+    IssueKind.ZERO_AREA_FACE: "A face has zero (or near-zero) area.",
     IssueKind.NON_PLANAR_FACE: "A polygon face's vertices are not coplanar.",
     IssueKind.T_JUNCTION: "A vertex lies on another face's edge without being shared (T-junction).",
     IssueKind.INTERSECTION: "An edge passes through a face (segment-facet intersection).",

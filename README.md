@@ -145,9 +145,9 @@ from geometry_pipeline.io.registry import ExporterRegistry
 
 # Validators / repairs live under the per-kind subpackage.
 from geometry_pipeline.validators.mesh.duplicate_vertices import DuplicateVerticesValidator
-from geometry_pipeline.validators.mesh.degenerate_faces import DegenerateFacesValidator
+from geometry_pipeline.validators.mesh.degenerate_faces import ZeroAreaFaceValidator
 from geometry_pipeline.repairs.mesh.deduplicate_vertices import DeduplicateVerticesRepair
-from geometry_pipeline.repairs.mesh.remove_degenerate_faces import RemoveDegenerateFacesRepair
+from geometry_pipeline.repairs.mesh.remove_degenerate_faces import RemoveZeroAreaFaceRepair
 
 
 def my_profile() -> SimulationProfile:
@@ -157,20 +157,20 @@ def my_profile() -> SimulationProfile:
         target_ir=Mesh,                       # this profile operates on meshes
         pre_validators=[
             DuplicateVerticesValidator(),
-            DegenerateFacesValidator(),
+            ZeroAreaFaceValidator(),
         ],
         stages=[
             Stage(
                 name="cleanup",
                 repairs=[
                     DeduplicateVerticesRepair(),
-                    RemoveDegenerateFacesRepair(),
+                    RemoveZeroAreaFaceRepair(),
                 ],
                 # re-detect after the repairs in this stage:
-                post_validators=[DegenerateFacesValidator()],
+                post_validators=[ZeroAreaFaceValidator()],
             ),
         ],
-        final_validators=[DegenerateFacesValidator()],
+        final_validators=[ZeroAreaFaceValidator()],
         exporters=[
             ExporterRegistry.get("obj", Mesh.kind),
         ],

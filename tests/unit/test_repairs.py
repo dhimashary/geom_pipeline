@@ -15,7 +15,7 @@ from geometry_pipeline.repairs.mesh.compact_vertices import CompactVerticesRepai
 from geometry_pipeline.repairs.mesh.deduplicate_vertices import DeduplicateVerticesRepair
 from geometry_pipeline.repairs.mesh.fix_t_junctions import FixTJunctionsIterativeRepair
 from geometry_pipeline.repairs.mesh.orient_outward import FlipFacesIfMajorityInwardRepair
-from geometry_pipeline.repairs.mesh.remove_degenerate_faces import RemoveDegenerateFacesRepair
+from geometry_pipeline.repairs.mesh.remove_degenerate_faces import RemoveZeroAreaFaceRepair
 from geometry_pipeline.repairs.mesh.sort_vertices import SortVerticesDeterministicallyRepair
 from geometry_pipeline.validators.mesh.t_junctions import TJunctionsValidator
 
@@ -41,14 +41,14 @@ def test_deduplicate_handles_declared_issues(ctx):
     assert IssueKind.DUPLICATE_VERTEX in repair.handles
 
 
-# --- remove_degenerate_faces -------------------------------------------------
+# --- remove_zero_area_faces -------------------------------------------------
 
-def test_remove_degenerate_drops_only_the_zero_area_face(ctx):
+def test_remove_zero_area_drops_only_the_zero_area_face(ctx):
     mesh = make_mesh(
         [(0, 0, 0), (1, 0, 0), (0, 1, 0), (2, 0, 0)],
         [[1, 2, 3], [1, 2, 4]],  # second face is collinear (zero area)
     )
-    new_mesh, result = RemoveDegenerateFacesRepair().apply(mesh, [], ctx)
+    new_mesh, result = RemoveZeroAreaFaceRepair().apply(mesh, [], ctx)
     assert len(new_mesh.faces) == 1
     assert result.before_count == 2
     assert result.after_count == 1

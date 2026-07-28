@@ -11,7 +11,7 @@ from geometry_pipeline.core.jsonable import to_jsonable
 
 class IssueKind(str, Enum):
     DUPLICATE_VERTEX = "duplicate_vertex"
-    DEGENERATE_FACE = "degenerate_face"
+    ZERO_AREA_FACE = "zero_area_face"
     NON_PLANAR_FACE = "non_planar_face"
     T_JUNCTION = "t_junction"
     INTERSECTION = "intersection"

@@ -11,17 +11,17 @@ from geometry_pipeline.geometry_math.predicates import classify_face_degeneracy
 from geometry_pipeline.validators.base import BaseValidator
 
 
-def detect_degenerate_faces_mesh(
+def detect_zero_area_faces_mesh(
     mesh: Mesh,
     *,
-    fatal_area2_tol: float = 1e-16,
-    min_altitude_tol: float = 0.0,
+    fatal_area2_tol: float = 1e-12,
+    min_altitude_tol: float = 1e-4,
 ) -> List[Dict[str, Any]]:
-    """Detect degenerate faces directly on the Mesh IR (zero-area faces).
+    """Detect zero-area faces directly on the Mesh IR (zero-area faces).
 
     Returns legacy-style detector dicts so downstream plumbing is unchanged.
     """
-    degenerate_faces: List[Dict[str, Any]] = []
+    zero_area_faces: List[Dict[str, Any]] = []
     points = [(v.x, v.y, v.z) for v in mesh.vertices]
 
     for fi, face in enumerate(mesh.faces):
@@ -35,17 +35,17 @@ def detect_degenerate_faces_mesh(
 
         if status == "fatal":
             coordinates = [points[vid - 1] for vid in vids]
-            degenerate_faces.append({
+            zero_area_faces.append({
                 "elements": {
                     "type": "face",
                     "points": [[coord[0], coord[1], coord[2]] for coord in coordinates],
                 },
             })
 
-    return degenerate_faces
+    return zero_area_faces
 
 
-def detect_degenerate_faces(
+def detect_zero_area_faces(
     faces,
     points: List[Tuple[float, float, float]],
     *,
@@ -54,7 +54,7 @@ def detect_degenerate_faces(
     """Compatibility wrapper for legacy callers that provide FaceRecord-style
     `faces` (with `.verts` and `.fid`) and a `points` list.
     """
-    degenerate_faces: List[Dict[str, Any]] = []
+    zero_area_faces: List[Dict[str, Any]] = []
 
     for f in faces:
         vids = [int(i) for i in getattr(f, "verts", getattr(f, "vertex_indices", []))]
@@ -66,23 +66,23 @@ def detect_degenerate_faces(
 
         if status == "fatal":
             coordinates = [points[vid - 1] for vid in vids]
-            degenerate_faces.append({
+            zero_area_faces.append({
                 "elements": {
                     "type": "face",
                     "points": [[coord[0], coord[1], coord[2]] for coord in coordinates],
                 },
             })
 
-    return degenerate_faces
+    return zero_area_faces
 
 
-class DegenerateFacesValidator(BaseValidator):
-    name: ClassVar[str] = "degenerate_faces"
+class ZeroAreaFaceValidator(BaseValidator):
+    name: ClassVar[str] = "zero_area_faces"
     accepts: ClassVar[set[str]] = {"mesh"}
-    kind: ClassVar[IssueKind] = IssueKind.DEGENERATE_FACE
+    kind: ClassVar[IssueKind] = IssueKind.ZERO_AREA_FACE
 
     def detect_raw(self, geom: Mesh, ctx: Context) -> list[dict]:
-        return detect_degenerate_faces_mesh(
+        return detect_zero_area_faces_mesh(
             geom,
             fatal_area2_tol=ctx.tolerances.degenerate_area,
             min_altitude_tol=ctx.tolerances.degenerate_min_altitude_m,

@@ -182,7 +182,7 @@ def detect_overlapping_faces_mesh(
             continue
         nrm = newell_normal_from_points(vids, points)
         if norm(nrm) <= 0.0:
-            continue  # degenerate face, handled by DegenerateFacesValidator
+            continue  # zero-area face, handled by ZeroAreaFaceValidator
         unit_n = unit(nrm)
         tris = _face_triangles_3d(vids, points)
         if not tris:

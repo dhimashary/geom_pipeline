@@ -17,7 +17,7 @@ from geometry_pipeline.core.profile import SimulationProfile, Stage
 from geometry_pipeline.repairs.mesh.deduplicate_vertices import DeduplicateVerticesRepair
 from geometry_pipeline.repairs.mesh.fix_t_junctions import FixTJunctionsIterativeRepair
 from geometry_pipeline.repairs.mesh.orient_outward import FlipFacesIfMajorityInwardRepair
-from geometry_pipeline.repairs.mesh.remove_degenerate_faces import RemoveDegenerateFacesRepair
+from geometry_pipeline.repairs.mesh.remove_degenerate_faces import RemoveZeroAreaFaceRepair
 from geometry_pipeline.repairs.mesh.repair_intersections import (
     RepairPlcByOffsetRepair,
     RepairPlcSingleSplitsRepair,
@@ -26,7 +26,7 @@ from geometry_pipeline.repairs.mesh.repair_intersections import (
 from geometry_pipeline.repairs.mesh.sort_vertices import SortVerticesDeterministicallyRepair
 from geometry_pipeline.core.tolerances import Tolerances
 from geometry_pipeline.validators.mesh.boundary_edges import BoundaryEdgesValidator
-from geometry_pipeline.validators.mesh.degenerate_faces import DegenerateFacesValidator
+from geometry_pipeline.validators.mesh.degenerate_faces import ZeroAreaFaceValidator
 from geometry_pipeline.validators.mesh.duplicate_vertices import DuplicateVerticesValidator
 from geometry_pipeline.validators.mesh.intersections import IntersectionsValidator
 from geometry_pipeline.validators.mesh.non_planar_faces import NonPlanarFacesValidator
@@ -41,7 +41,7 @@ def _wave_based_pre_validators(tjunc, intersect) -> list:
     return [
         NonPlanarFacesValidator(),
         DuplicateVerticesValidator(),
-        DegenerateFacesValidator(),
+        ZeroAreaFaceValidator(),
         OverlappingFacesValidator(),
         SmallFacesValidator(),
         CollinearFacesValidator(),
@@ -79,7 +79,7 @@ def _wave_based_stages(
     """
     stages = [
         Stage(name="deduplication", repairs=[DeduplicateVerticesRepair()]),
-        Stage(name="degenerate", repairs=[RemoveDegenerateFacesRepair()]),
+        Stage(name="zero_area_face", repairs=[RemoveZeroAreaFaceRepair()]),
         Stage(name="sort", repairs=[SortVerticesDeterministicallyRepair()]),
         # tjunc measured here = ORIGINAL count (orient does not change tjuncs)
         Stage(
@@ -123,7 +123,7 @@ def _wave_based_stages(
 def _wave_based_final_validators(tjunc, intersect) -> list:
     return [
         NonPlanarFacesValidator(),
-        DegenerateFacesValidator(),
+        ZeroAreaFaceValidator(),
         OverlappingFacesValidator(),
         SmallFacesValidator(),
         CollinearFacesValidator(),
