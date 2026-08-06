@@ -156,9 +156,9 @@ class GmshGeoExporter:
         # Material mapping for later use
         material_to_id = {}
         if model is not None:
-            for obj in model.Objects:
+            for obj in model.Objects:  # type: ignore[attr-defined]
                 if isinstance(obj.Geometry, rhino3dm.Mesh):
-                    material_name = obj.Geometry.GetUserString("material_name")
+                    material_name = obj.Geometry.GetUserString("material_name")  # type: ignore[attr-defined]
                     if material_name:
                         material_to_id[f"{obj.Attributes.Id}"] = material_name
         else:

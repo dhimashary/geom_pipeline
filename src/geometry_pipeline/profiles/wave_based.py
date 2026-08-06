@@ -78,9 +78,9 @@ def _wave_based_stages(
     converter.
     """
     stages = [
-        Stage(name="deduplication", repairs=[DeduplicateVerticesRepair()]),
-        Stage(name="zero_area_face", repairs=[RemoveZeroAreaFaceRepair()]),
-        Stage(name="sort", repairs=[SortVerticesDeterministicallyRepair()]),
+        Stage(name="deduplication", repairs=[DeduplicateVerticesRepair()]),  # type: ignore[list-item]
+        Stage(name="zero_area_face", repairs=[RemoveZeroAreaFaceRepair()]),  # type: ignore[list-item]
+        Stage(name="sort", repairs=[SortVerticesDeterministicallyRepair()]),  # type: ignore[list-item]
         # tjunc measured here = ORIGINAL count (orient does not change tjuncs)
         Stage(
             name="orient",

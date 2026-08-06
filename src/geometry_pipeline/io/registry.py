@@ -48,15 +48,15 @@ class ImporterRegistry:
         try:
             from geometry_pipeline.io.importers.obj import ObjImporter
         except Exception:
-            ObjImporter = None
+            ObjImporter = None  # type: ignore[assignment,misc]
         try:
             from geometry_pipeline.io.importers.dxf import DxfImporter
         except Exception:
-            DxfImporter = None
+            DxfImporter = None  # type: ignore[assignment,misc]
         try:
             from geometry_pipeline.io.importers.rhino import Rhino3dmImporter
         except Exception:
-            Rhino3dmImporter = None
+            Rhino3dmImporter = None  # type: ignore[assignment,misc]
 
         for imp in (ObjImporter, DxfImporter, Rhino3dmImporter):
             if imp is not None:
@@ -115,15 +115,15 @@ class ExporterRegistry:
         try:
             from geometry_pipeline.io.exporters.mesh_obj import MeshObjExporter
         except Exception:
-            MeshObjExporter = None
+            MeshObjExporter = None  # type: ignore[assignment,misc]
         try:
             from geometry_pipeline.io.exporters.mesh_geo import GmshGeoExporter
         except Exception:
-            GmshGeoExporter = None
+            GmshGeoExporter = None  # type: ignore[assignment,misc]
         try:
             from geometry_pipeline.io.exporters.mesh_three_dm import MeshThreeDMExporter
         except Exception:
-            MeshThreeDMExporter = None
+            MeshThreeDMExporter = None  # type: ignore[assignment,misc]
 
         for fmt, kind, exp in (
             ("obj", "mesh", MeshObjExporter),
@@ -131,4 +131,4 @@ class ExporterRegistry:
             ("3dm", "mesh", MeshThreeDMExporter),
         ):
             if exp is not None:
-                cls.register(fmt, kind, exp)
+                cls.register(fmt, kind, exp)  # type: ignore[arg-type]

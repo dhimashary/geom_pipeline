@@ -69,10 +69,10 @@ class JsonReportWriter:
             from .frontend_schema import kind_dict, snapshot_report
         except Exception:
             # fallback: build minimal shapes
-            def kind_dict(x):
+            def kind_dict(x):  # type: ignore[misc]
                 return {}
 
-            def snapshot_report(x):
+            def snapshot_report(x):  # type: ignore[misc]
                 return {"pre": {}, "post": {}, "repairs": []}
 
         if self.issue_source == "composite":

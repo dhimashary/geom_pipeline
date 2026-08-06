@@ -36,7 +36,7 @@ try:
     # kernel; import lazily to avoid requiring Shapely unless detection runs.
     from geometry_pipeline.geometry_math.triangulation import triangulate_face_cdt_shapely
 except Exception:
-    triangulate_face_cdt_shapely = None  # type: ignore[no-redef]
+    triangulate_face_cdt_shapely = None  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
 
