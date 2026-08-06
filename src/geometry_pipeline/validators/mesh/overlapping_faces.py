@@ -300,7 +300,7 @@ class OverlappingFacesValidator(BaseValidator):
     accepts: ClassVar[set[str]] = {"mesh"}
     kind: ClassVar[IssueKind] = IssueKind.OVERLAPPING_FACE
 
-    def detect_raw(self, geom: Mesh, ctx: Context) -> list[dict]:
+    def detect_raw(self, geom: Mesh, ctx: Context) -> list[dict]:  # type: ignore[override]
         return detect_overlapping_faces_mesh(
             geom,
             coplanar_dist_m=ctx.tolerances.overlap_coplanar_dist_m,

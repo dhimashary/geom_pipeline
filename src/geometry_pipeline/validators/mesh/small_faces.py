@@ -48,7 +48,7 @@ class SmallFacesValidator(BaseValidator):
     accepts: ClassVar[set[str]] = {"mesh"}
     kind: ClassVar[IssueKind] = IssueKind.SMALL_FACE
 
-    def detect_raw(self, geom: Mesh, ctx: Context) -> list[dict]:
+    def detect_raw(self, geom: Mesh, ctx: Context) -> list[dict]:  # type: ignore[override]
         points = [(v.x, v.y, v.z) for v in geom.vertices]
         threshold = ctx.tolerances.small_face_max_dim
 

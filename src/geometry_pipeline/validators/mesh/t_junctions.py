@@ -112,7 +112,7 @@ class TJunctionsValidator(BaseValidator):
     accepts: ClassVar[set[str]] = {"mesh"}
     kind: ClassVar[IssueKind] = IssueKind.T_JUNCTION
 
-    def detect_raw(self, geom: Mesh, ctx: Context) -> list[dict]:
+    def detect_raw(self, geom: Mesh, ctx: Context) -> list[dict]:  # type: ignore[override]
         return detect_t_junctions_mesh_global_plc(
             geom,
             tol=ctx.tolerances.t_junction,

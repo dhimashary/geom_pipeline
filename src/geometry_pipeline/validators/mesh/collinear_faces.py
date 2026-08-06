@@ -30,7 +30,7 @@ class CollinearFacesValidator(BaseValidator):
     accepts: ClassVar[set[str]] = {"mesh"}
     kind: ClassVar[IssueKind] = IssueKind.COLLINEAR_FACE
 
-    def detect_raw(self, geom: Mesh, ctx: Context) -> list[dict]:
+    def detect_raw(self, geom: Mesh, ctx: Context) -> list[dict]:  # type: ignore[override]
         points = [(v.x, v.y, v.z) for v in geom.vertices]
         max_deviation = ctx.tolerances.collinear_face_max_deviation_m
 

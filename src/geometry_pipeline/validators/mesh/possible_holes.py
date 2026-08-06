@@ -361,7 +361,7 @@ class PossibleHolesValidator(BaseValidator):
     accepts: ClassVar[set[str]] = {"mesh"}
     kind: ClassVar[IssueKind] = IssueKind.POSSIBLE_HOLE
 
-    def detect_raw(self, geom: Mesh, ctx: Context) -> list[dict]:
+    def detect_raw(self, geom: Mesh, ctx: Context) -> list[dict]:  # type: ignore[override]
         points = [(v.x, v.y, v.z) for v in geom.vertices]
         return detect_possible_holes_from_faces(
             list(geom.faces),

@@ -85,7 +85,7 @@ class ZeroAreaFaceValidator(BaseValidator):
     accepts: ClassVar[set[str]] = {"mesh"}
     kind: ClassVar[IssueKind] = IssueKind.ZERO_AREA_FACE
 
-    def detect_raw(self, geom: Mesh, ctx: Context) -> list[dict]:
+    def detect_raw(self, geom: Mesh, ctx: Context) -> list[dict]:  # type: ignore[override]
         return detect_zero_area_faces_mesh(
             geom,
             fatal_area2_tol=ctx.tolerances.degenerate_area,

@@ -374,7 +374,7 @@ class IntersectionsValidator(BaseValidator):
     accepts: ClassVar[set[str]] = {"mesh"}
     kind: ClassVar[IssueKind] = IssueKind.INTERSECTION
 
-    def detect_raw(self, geom: Mesh, ctx: Context) -> list[dict]:
+    def detect_raw(self, geom: Mesh, ctx: Context) -> list[dict]:  # type: ignore[override]
         return detect_segment_facet_intersections_cdt_mesh(
             geom,
             warn_planar_tol_m=ctx.tolerances.planarity_warn_m,

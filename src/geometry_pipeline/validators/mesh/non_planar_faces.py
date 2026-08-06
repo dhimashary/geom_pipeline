@@ -98,7 +98,7 @@ class NonPlanarFacesValidator(BaseValidator):
     accepts: ClassVar[set[str]] = {"mesh"}
     kind: ClassVar[IssueKind] = IssueKind.NON_PLANAR_FACE
 
-    def detect_raw(self, geom: Mesh, ctx: Context) -> list[dict]:
+    def detect_raw(self, geom: Mesh, ctx: Context) -> list[dict]:  # type: ignore[override]
         return inspect_face_planarity_issues_mesh(
             geom,
             warn_planar_tol_m=ctx.tolerances.planarity_warn_m,

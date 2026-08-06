@@ -56,6 +56,6 @@ class DuplicateVerticesValidator(BaseValidator):
     accepts: ClassVar[set[str]] = {"mesh"}
     kind: ClassVar[IssueKind] = IssueKind.DUPLICATE_VERTEX
 
-    def detect_raw(self, geom: Mesh, ctx: Context) -> list[dict]:
+    def detect_raw(self, geom: Mesh, ctx: Context) -> list[dict]:  # type: ignore[override]
         points = [(v.x, v.y, v.z) for v in geom.vertices]
         return detect_duplicate_vertices(points, tol=ctx.tolerances.vertex_merge)
