@@ -137,9 +137,9 @@ def _extract_rhino_materials(rhino3dm_path: str) -> List[str]:
         return []
 
     materials: List[str] = []
-    for obj in model.Objects:
+    for obj in model.Objects:  # type: ignore[attr-defined]
         if isinstance(obj.Geometry, rhino3dm.Mesh):
-            name = obj.Geometry.GetUserString("material_name")
+            name = obj.Geometry.GetUserString("material_name")  # type: ignore[attr-defined]
             materials.append(name or "unknown")
 
     return materials
@@ -149,8 +149,8 @@ class ObjImporter:
     extensions: ClassVar[tuple[str, ...]] = (".obj",)
 
     def load(self, path: Path) -> Mesh:
-        path = str(path)
-        vertices, raw_faces, face_groups, face_group_materials = _parse_obj_file(path)
+        path_str = str(path)
+        vertices, raw_faces, face_groups, face_group_materials = _parse_obj_file(path_str)
 
         # `process_and_instantiate_faces` needs a per-face material id list;
         # absent a Rhino sidecar we fall back to the OBJ's `usemtl` value.

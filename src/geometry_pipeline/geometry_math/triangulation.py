@@ -5,8 +5,8 @@ from __future__ import annotations
 from typing import List, Tuple
 
 try:
-    from shapely import constrained_delaunay_triangles
-    from shapely.geometry import Polygon
+    from shapely import constrained_delaunay_triangles  # type: ignore[import-untyped]
+    from shapely.geometry import Polygon  # type: ignore[import-untyped]
 except Exception:
     Polygon = None  # type: ignore
     constrained_delaunay_triangles = None  # type: ignore
