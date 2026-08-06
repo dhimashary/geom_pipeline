@@ -337,7 +337,7 @@ def repair_plc_single_splits_iterative(
     max_iters: int = 20,
     planarity_tol_m: float = 1e-6,
 ):
-    summary = {
+    summary: dict[str, Any] = {
         "iterations": 0,
         "applied_repairs": 0,
         "stopped_reason": "unknown",
@@ -924,7 +924,7 @@ def repair_plc_by_offset_iterative(
 
 
 # -------- REPAIR MULTI HIT POINT-FACE INTERSECTION BY SPLITTING WITH NEW VERTEX --------
-def _find_face_by_fid(faces: List[Face], fid: int):
+def _find_face_by_fid(faces: List[Face], fid: int):  # type: ignore[no-redef]
     for i, f in enumerate(faces):
         if _face_fid(f, idx=i) == fid:
             return f
@@ -1136,7 +1136,9 @@ def orient_faces_consistently_by_adjacency(
             nonmanifold_edges,
         )
 
-    face_adj: Dict[int, List[Tuple[int, Tuple[int, int], Tuple[int, int]]]] = defaultdict(list)
+    face_adj: Dict[int, List[Tuple[int, Tuple[int, int], Tuple[int, int], Tuple[int, int]]]] = (
+        defaultdict(list)
+    )
 
     for e, uses in edge_to_uses.items():
         if len(uses) != 2:

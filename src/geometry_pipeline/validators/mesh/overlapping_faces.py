@@ -45,8 +45,8 @@ from geometry_pipeline.geometry_math.triangulation import triangulate_face_cdt_s
 from geometry_pipeline.validators.base import BaseValidator
 
 try:
-    from shapely.geometry import Polygon as _ShapelyPolygon
-    from shapely.ops import unary_union as _shapely_unary_union
+    from shapely.geometry import Polygon as _ShapelyPolygon  # type: ignore[import-untyped]
+    from shapely.ops import unary_union as _shapely_unary_union  # type: ignore[import-untyped]
 except Exception:  # pragma: no cover - shapely is a hard dependency in practice
     _ShapelyPolygon = None  # type: ignore
     _shapely_unary_union = None  # type: ignore

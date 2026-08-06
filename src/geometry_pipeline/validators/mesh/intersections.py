@@ -198,8 +198,8 @@ def detect_segment_facet_intersections_cdt_mesh(
     min_coplanar_overlap_len=1e-6,
 ) -> List[Dict[str, Any]]:
     points = [(v.x, v.y, v.z) for v in mesh.vertices]
-    tri_list = []
-    face_polys = []
+    tri_list: list[dict[str, Any]] = []
+    face_polys: list[dict[str, Any]] = []
 
     for fi, face in enumerate(mesh.faces):
         vids = [int(i) for i in face.vertex_indices]
