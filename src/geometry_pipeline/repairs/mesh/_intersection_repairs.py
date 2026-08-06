@@ -4,14 +4,14 @@ This module contains a small, focused subset needed by the high-level
 repair classes in `app.geometry.repairs` so the repairs package can be
 independent from `app.services` during migration.
 """
+
 from __future__ import annotations
 
-from collections import defaultdict, deque
 import logging
 import math
-from typing import List, Tuple, Dict, Any, Optional
+from collections import defaultdict, deque
+from typing import Any, Dict, List, Optional, Tuple
 
-import numpy as np
 from geometry_pipeline.core.ir import Face
 from geometry_pipeline.geometry_math.geometry_math import (
     area2,
@@ -19,23 +19,21 @@ from geometry_pipeline.geometry_math.geometry_math import (
     distance,
     dot,
     newell_normal_from_points,
-    point_on_segment_2d,
+    point_in_polygon_2d,
+    polygon_area2_newell,
+    project_face_to_2d,
+    project_point_by_dropped_axis,
     segments_intersect_2d,
     sub,
     tri_area2,
-    unit,
     uedge,
-    project_point_by_dropped_axis,
-    project_face_to_2d,
-    point_in_polygon_2d,
-    polygon_area2_newell,
+    unit,
 )
-from geometry_pipeline.geometry_math.triangulation import triangulate_face_cdt_shapely
 from geometry_pipeline.geometry_math.predicates import (
     classify_face_degeneracy,
-    classify_face_planarity_m,
     planarity_deviation_m,
 )
+from geometry_pipeline.geometry_math.triangulation import triangulate_face_cdt_shapely
 from geometry_pipeline.io.importers.obj import clean_face_loop
 
 logger = logging.getLogger(__name__)
@@ -43,6 +41,8 @@ logger = logging.getLogger(__name__)
 from geometry_pipeline.repairs.mesh._common import (
     compact_vertices_and_remove_unused,
     get_or_create_vertex,
+)
+from geometry_pipeline.repairs.mesh._common import (
     flip_all_faces_if_majority_inward as _flip_all_faces_if_majority_inward,
 )
 
@@ -79,6 +79,7 @@ def _reverse_face_vids(face):
         )
     face.vertex_indices.reverse()
 
+
 # Wrappers for larger PLC repair routines (delegate to legacy service for now)
 def trim_segment_face_intersections_iterative(
     faces: List[Face],
@@ -99,7 +100,8 @@ def trim_segment_face_intersections_iterative(
         seg_face_hits = [
             r
             for r in plc_hits
-            if r.get("hit_type") in ("segment_face_interior_intersection", "segment_edge_intersection")
+            if r.get("hit_type")
+            in ("segment_face_interior_intersection", "segment_edge_intersection")
         ]
         if not seg_face_hits:
             diag = {
@@ -129,7 +131,9 @@ def trim_segment_face_intersections_iterative(
             }
             return faces, points, changed_any, diag
 
-        faces2, points2, compact_changed, compact_diag = compact_vertices_and_remove_unused(faces2, points2)
+        faces2, points2, compact_changed, compact_diag = compact_vertices_and_remove_unused(
+            faces2, points2
+        )
         action = {
             "iteration": it,
             "target_hit": {
@@ -163,6 +167,7 @@ def trim_segment_face_intersections_iterative(
 
 
 # ------ Trimming Helper
+
 
 def _clip_face_loop_against_plane(
     face_loop: List[int],
@@ -263,7 +268,7 @@ def collect_face_component_from_seed_faces(
     excluded_face_fids: List[int] | None = None,
 ) -> List[int]:
     excluded = set(excluded_face_fids or [])
-    valid_fids = { _face_fid(f, idx=i) for i,f in enumerate(faces) }
+    valid_fids = {_face_fid(f, idx=i) for i, f in enumerate(faces)}
     seeds = [fid for fid in seed_face_fids if fid in valid_fids and fid not in excluded]
     if not seeds:
         return []
@@ -308,7 +313,7 @@ def _build_edge_face_adjacency(faces: List[Face]) -> Dict[Tuple[int, int], List[
 # ------ End of Trimming Helper
 
 
-# ------ Repair Segment-Face Intersection 
+# ------ Repair Segment-Face Intersection
 
 
 def flip_all_faces_if_majority_inward(
@@ -319,9 +324,7 @@ def flip_all_faces_if_majority_inward(
 ) -> bool:
     # Re-exported from the shared helper so existing call sites in this module
     # keep working. Single source of truth lives in ``repairs._common``.
-    return _flip_all_faces_if_majority_inward(
-        faces, unique_vertices, room_center, logger=logger
-    )
+    return _flip_all_faces_if_majority_inward(faces, unique_vertices, room_center, logger=logger)
 
 
 def repair_plc_single_splits_iterative(
@@ -362,7 +365,7 @@ def repair_plc_single_splits_iterative(
             if logger:
                 logger.info("[PLC REPAIR] stable after %d iterations: no PLC hits", it - 1)
             return faces, points, changed_any, summary
-        
+
         endpoint_face_hits = [
             r
             for r in plc_hits
@@ -376,7 +379,9 @@ def repair_plc_single_splits_iterative(
             summary["remaining_multi_hit_faces"] = 0
             summary["stopped_reason"] = "no_endpoint_face_hits"
             if logger:
-                logger.info("[PLC REPAIR] stop: PLC hits remain, but none are endpoint_face_interior_touch")
+                logger.info(
+                    "[PLC REPAIR] stop: PLC hits remain, but none are endpoint_face_interior_touch"
+                )
             return faces, points, changed_any, summary
 
         hits_by_face = defaultdict(list)
@@ -406,7 +411,6 @@ def repair_plc_single_splits_iterative(
         # Priority 1: multi-hit same-face repair
         # ---------------------------------------------------------
         if multi_hit_faces:
-
             chosen_fid = max(multi_hit_faces, key=lambda fid: len(hits_by_face[fid]))
 
             chosen_reports = hits_by_face[chosen_fid]
@@ -414,49 +418,30 @@ def repair_plc_single_splits_iterative(
             chosen_face = _find_face_by_fid(faces, chosen_fid)
 
             cls = _classify_multi_hit_face_collinear(
-
                 chosen_face,
-
                 chosen_reports,
-
                 points,
-
                 tol_m=0.01,
-
             )
 
             if cls["is_collinear"]:
-
                 if logger:
-
                     logger.info(
-
                         "[PLC REPAIR] multi-hit face=%d classified as COLLINEAR (max_dev=%.6g)",
-
                         chosen_fid,
-
                         cls["max_dev"],
-
                     )
 
                 faces, points, changed, diag = repair_multi_hit_face_collinear_chain(
-
                     faces,
-
                     chosen_reports,
-
                     points,
-
                     logger=logger,
-
                 )
 
             else:
-
                 if logger:
-
                     logger.info(
-
                         "CURRENTLY ONLY COLLINEAR multi-hit repair is implemented; face=%d classified as NONCOLLINEAR (max_dev=%.6g); skipping for now",
                         chosen_fid,
                         cls["max_dev"],
@@ -495,7 +480,10 @@ def repair_plc_single_splits_iterative(
         if not changed:
             summary["stopped_reason"] = "selected_candidate_not_changed"
             if logger:
-                logger.info("[PLC REPAIR] stop: selected candidate produced no topology change; diag=%s", diag)
+                logger.info(
+                    "[PLC REPAIR] stop: selected candidate produced no topology change; diag=%s",
+                    diag,
+                )
             return faces, points, changed_any, summary
 
         changed_any = True
@@ -603,7 +591,7 @@ def _split_face_at_single_interior_vertex(
 
             pa = poly2d[a]
             pb = poly2d[b]
-            score = (pa[0] - pb[0])**2 + (pa[1] - pb[1])**2
+            score = (pa[0] - pb[0]) ** 2 + (pa[1] - pb[1]) ** 2
             if score > best_score:
                 best_score = score
                 best_pair = (a, b)
@@ -696,7 +684,9 @@ def _repair_single_endpoint_face_interior_touch(
         if logger:
             logger.warning(
                 "[SINGLE SPLIT] failed facet_fid=%d inserted_vid=%d vids=%s",
-                facet_fid, inserted_vid, _face_vids(touched_face)
+                facet_fid,
+                inserted_vid,
+                _face_vids(touched_face),
             )
         return faces, False, diag
 
@@ -707,7 +697,13 @@ def _repair_single_endpoint_face_interior_touch(
             continue
 
         for poly in split_polys:
-            new_faces.append(Face(vertex_indices=poly, group=getattr(f, "group", "default"), material=getattr(f, "material", None)))
+            new_faces.append(
+                Face(
+                    vertex_indices=poly,
+                    group=getattr(f, "group", "default"),
+                    material=getattr(f, "material", None),
+                )
+            )
 
     diag["status"] = "ok"
     diag["n_new_faces"] = len(split_polys)
@@ -715,7 +711,9 @@ def _repair_single_endpoint_face_interior_touch(
     if logger:
         logger.info(
             "[SINGLE SPLIT] repaired facet_fid=%d inserted_vid=%d -> %d new faces",
-            facet_fid, inserted_vid, len(split_polys)
+            facet_fid,
+            inserted_vid,
+            len(split_polys),
         )
 
     return new_faces, True, diag
@@ -723,10 +721,12 @@ def _repair_single_endpoint_face_interior_touch(
 
 # point_segment_distance_2d moved to geometry_math
 
+
 def _project_face_and_point_to_2d(face_ids, point_vid, points):
     poly2d, dropped_axis = project_face_to_2d(face_ids, points)
     p2 = project_point_by_dropped_axis(points[point_vid - 1], dropped_axis)
     return poly2d, p2, dropped_axis
+
 
 def _repair_single_endpoint_face_interior_touch_by_triangulation(
     faces: List[Face],
@@ -793,8 +793,7 @@ def _repair_single_endpoint_face_interior_touch_by_triangulation(
             diag["status"] = "triangulation_failed"
             if logger:
                 logger.warning(
-                    "[PLC TRI REPAIR] triangulation failed facet_fid=%d poly=%s",
-                    facet_fid, poly
+                    "[PLC TRI REPAIR] triangulation failed facet_fid=%d poly=%s", facet_fid, poly
                 )
             return faces, False, diag
 
@@ -818,7 +817,13 @@ def _repair_single_endpoint_face_interior_touch_by_triangulation(
             continue
 
         for tri in out_tris:
-            new_faces.append(Face(vertex_indices=tri, group=getattr(f, "group", "default"), material=getattr(f, "material", None)))
+            new_faces.append(
+                Face(
+                    vertex_indices=tri,
+                    group=getattr(f, "group", "default"),
+                    material=getattr(f, "material", None),
+                )
+            )
 
     diag["status"] = "ok"
 
@@ -835,11 +840,10 @@ def _repair_single_endpoint_face_interior_touch_by_triangulation(
 
 
 from geometry_pipeline.repairs.mesh._common import (
-    move_touching_endpoint_off_face,
     _endpoint_vids_from_edge_t,
     _find_face_by_fid,
+    move_touching_endpoint_off_face,
 )
-
 
 # helpers moved to repairs._common
 
@@ -878,15 +882,16 @@ def repair_plc_by_offset_iterative(
             return faces, points, changed_any, summary
 
         endpoint_face_hits = [
-            r for r in plc_hits
-            if r.get("hit_type") == "endpoint_face_interior_touch"
+            r for r in plc_hits if r.get("hit_type") == "endpoint_face_interior_touch"
         ]
         summary["remaining_endpoint_face_hits"] = len(endpoint_face_hits)
 
         if not endpoint_face_hits:
             summary["stopped_reason"] = "no_endpoint_face_interior_touch"
             if logger:
-                logger.info("[PLC OFFSET] stop: PLC hits remain, but none are endpoint_face_interior_touch")
+                logger.info(
+                    "[PLC OFFSET] stop: PLC hits remain, but none are endpoint_face_interior_touch"
+                )
             return faces, points, changed_any, summary
 
         target = endpoint_face_hits[0]
@@ -944,7 +949,7 @@ def _project_to_face_2d(p, c, u, v):
     return (dot(d, u), dot(d, v))
 
 
-from geometry_pipeline.repairs.mesh._common import polygon_centroid, get_or_create_vertex
+from geometry_pipeline.repairs.mesh._common import polygon_centroid
 
 
 def _classify_multi_hit_face_collinear(
@@ -976,7 +981,7 @@ def _classify_multi_hit_face_collinear(
     b = pts2[best_j]
     dx = b[0] - a[0]
     dy = b[1] - a[1]
-    L = math.sqrt(dx*dx + dy*dy)
+    L = math.sqrt(dx * dx + dy * dy)
     if L <= 1e-12:
         return {
             "is_collinear": False,
@@ -988,9 +993,9 @@ def _classify_multi_hit_face_collinear(
     for p in pts2:
         px = p[0] - a[0]
         py = p[1] - a[1]
-        t = (px*dx + py*dy) / (L*L)
+        t = (px * dx + py * dy) / (L * L)
         params.append(t)
-        perp = abs(px*dy - py*dx) / L
+        perp = abs(px * dy - py * dx) / L
         max_dev = max(max_dev, perp)
     ordered = sorted(zip(params, pts2, pts3), key=lambda x: x[0])
     return {
@@ -1031,11 +1036,7 @@ def repair_multi_hit_face_collinear_chain(
         if dlen <= 1e-12:
             return 0.0
         p = points[vid - 1]
-        return (
-            (p[0] - a3[0]) * d3[0]
-            + (p[1] - a3[1]) * d3[1]
-            + (p[2] - a3[2]) * d3[2]
-        ) / dlen
+        return ((p[0] - a3[0]) * d3[0] + (p[1] - a3[1]) * d3[1] + (p[2] - a3[2]) * d3[2]) / dlen
 
     # The two chain endpoints sit *inside* the face. Snapping each end to the
     # globally nearest corner collapses both onto the same vertex when the
@@ -1064,11 +1065,11 @@ def repair_multi_hit_face_collinear_chain(
     i0 = verts.index(start_vid)
     i1 = verts.index(end_vid)
     if i0 <= i1:
-        path1 = verts[i0:i1 + 1]
-        path2 = verts[i1:] + verts[:i0 + 1]
+        path1 = verts[i0 : i1 + 1]
+        path2 = verts[i1:] + verts[: i0 + 1]
     else:
-        path1 = verts[i0:] + verts[:i1 + 1]
-        path2 = verts[i1:i0 + 1]
+        path1 = verts[i0:] + verts[: i1 + 1]
+        path2 = verts[i1 : i0 + 1]
     new_loop1 = clean_face_loop(path1 + list(reversed(split_chain[1:-1])))
     new_loop2 = clean_face_loop(path2 + split_chain[1:-1])
     if len(new_loop1) < 3 or len(new_loop2) < 3:
@@ -1078,8 +1079,20 @@ def repair_multi_hit_face_collinear_chain(
         if _face_fid(f, idx=i) != facet_fid:
             new_faces.append(f)
         else:
-            new_faces.append(Face(vertex_indices=new_loop1, group=getattr(f, "group", "default"), material=getattr(f, "material", None)))
-            new_faces.append(Face(vertex_indices=new_loop2, group=getattr(f, "group", "default"), material=getattr(f, "material", None)))
+            new_faces.append(
+                Face(
+                    vertex_indices=new_loop1,
+                    group=getattr(f, "group", "default"),
+                    material=getattr(f, "material", None),
+                )
+            )
+            new_faces.append(
+                Face(
+                    vertex_indices=new_loop2,
+                    group=getattr(f, "group", "default"),
+                    material=getattr(f, "material", None),
+                )
+            )
     diag = {
         "status": "ok",
         "repair_type": "collinear_chain_split",
@@ -1118,10 +1131,12 @@ def orient_faces_consistently_by_adjacency(
     if logger:
         logger.info(
             "[ORIENT] edges=%d boundary=%d nonmanifold=%d",
-            len(edge_to_uses), boundary_edges, nonmanifold_edges
+            len(edge_to_uses),
+            boundary_edges,
+            nonmanifold_edges,
         )
 
-    face_adj: Dict[int, List[Tuple[int, Tuple[int,int], Tuple[int,int]]]] = defaultdict(list)
+    face_adj: Dict[int, List[Tuple[int, Tuple[int, int], Tuple[int, int]]]] = defaultdict(list)
 
     for e, uses in edge_to_uses.items():
         if len(uses) != 2:
@@ -1151,9 +1166,12 @@ def orient_faces_consistently_by_adjacency(
 
         while q:
             fa = q.popleft()
-            for (fb, e, dir_a, dir_b) in face_adj.get(fa, []):
+            for fb, e, dir_a, dir_b in face_adj.get(fa, []):
                 if not visited[fb]:
-                    def current_edge_dir(face_verts: List[int], undirected_edge: Tuple[int,int]) -> Optional[Tuple[int,int]]:
+
+                    def current_edge_dir(
+                        face_verts: List[int], undirected_edge: Tuple[int, int]
+                    ) -> Optional[Tuple[int, int]]:
                         u, v = undirected_edge
                         n = len(face_verts)
                         for i in range(n):
@@ -1176,7 +1194,11 @@ def orient_faces_consistently_by_adjacency(
                     if da == db:
                         flip_face(fb)
                         if logger:
-                            logger.debug("[ORIENT] flipped face fid=%d to fix shared edge %s", _face_fid(faces[fb], idx=fb), e)
+                            logger.debug(
+                                "[ORIENT] flipped face fid=%d to fix shared edge %s",
+                                _face_fid(faces[fb], idx=fb),
+                                e,
+                            )
 
                     visited[fb] = True
                     q.append(fb)
@@ -1202,7 +1224,6 @@ def trim_component_against_facet_plane(
     max_component_fraction: float = 0.5,
     logger=None,
 ) -> Tuple[List[Face], List[Tuple[float, float, float]], bool, Dict[str, Any]]:
-    
     """
     Trim a connected face component against the plane of a clipping facet.
 
@@ -1352,7 +1373,11 @@ def trim_component_against_facet_plane(
             continue
 
         updated_faces.append(
-            Face(vertex_indices=clipped_loop, group=getattr(face, "group", "default"), material=getattr(face, "material", "unknown"))
+            Face(
+                vertex_indices=clipped_loop,
+                group=getattr(face, "group", "default"),
+                material=getattr(face, "material", "unknown"),
+            )
         )
 
     diag["new_vertices_added"] = len(points) - start_n_points

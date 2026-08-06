@@ -4,11 +4,14 @@ Wraps the legacy `parse_obj_file` + `process_and_instantiate_faces`
 sequence. The resulting `Mesh` is in IR coordinates (Z-up) — the
 SketchUp/Y-up flip is performed by `parse_obj_file` itself (tech-debt #6).
 """
+
 from __future__ import annotations
-import rhino3dm
+
 import logging
 from pathlib import Path
 from typing import ClassVar, Dict, List, Optional, Tuple
+
+import rhino3dm
 
 from geometry_pipeline.core.ir import Face, Mesh, Vertex
 
@@ -63,11 +66,7 @@ def _deduplicate_vertices(
         found = None
 
         for j, uv in enumerate(unique_vertices, start=1):
-            if (
-                abs(uv[0] - v[0]) < tol
-                and abs(uv[1] - v[1]) < tol
-                and abs(uv[2] - v[2]) < tol
-            ):
+            if abs(uv[0] - v[0]) < tol and abs(uv[1] - v[1]) < tol and abs(uv[2] - v[2]) < tol:
                 found = j
                 break
         if found is None:
@@ -183,4 +182,3 @@ deduplicate_vertices = _deduplicate_vertices
 parse_obj_file = _parse_obj_file
 process_and_instantiate_faces = _process_and_instantiate_faces
 extract_rhino_materials = _extract_rhino_materials
-

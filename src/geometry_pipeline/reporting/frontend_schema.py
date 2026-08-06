@@ -3,6 +3,7 @@ from __future__ import annotations
 from geometry_pipeline.core.issues import Issue, IssueKind
 from geometry_pipeline.core.report import PipelineResult, ValidationSnapshot
 
+
 def _normalise_elements(i: Issue) -> list[dict]:
     """Read the validator-supplied `elements` shape — no per-kind logic.
 
@@ -53,16 +54,18 @@ def revalidation_report_from_snapshot(snapshot: ValidationSnapshot) -> dict:
 def repair_report_from_pipeline(result: PipelineResult) -> list[dict]:
     out: list[dict] = []
     for r in result.repairs.results:
-        out.append({
-            "repair_type": r.step_name,
-            "affected_count": len(r.affected_ids),
-            "before": r.before_count,
-            "after": r.after_count,
-            "details": dict(r.details),
-            "stage": r.stage_name,
-            "iterations": r.iterations,
-            "affected_issue_ids": list(r.affected_ids),
-        })
+        out.append(
+            {
+                "repair_type": r.step_name,
+                "affected_count": len(r.affected_ids),
+                "before": r.before_count,
+                "after": r.after_count,
+                "details": dict(r.details),
+                "stage": r.stage_name,
+                "iterations": r.iterations,
+                "affected_issue_ids": list(r.affected_ids),
+            }
+        )
     return out
 
 

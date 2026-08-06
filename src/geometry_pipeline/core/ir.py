@@ -4,14 +4,15 @@ The IR is a tagged union: every variant implements `Geometry` and carries
 a `kind` discriminator so validators / repairs / exporters can declare which
 variants they accept.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import ClassVar, Protocol, runtime_checkable, List, Tuple
-
+from typing import ClassVar, List, Protocol, Tuple, runtime_checkable
 
 # ---- Primitive value objects ------------------------------------------------
+
 
 @dataclass(frozen=True)
 class Vertex:
@@ -30,6 +31,7 @@ class Face:
 @dataclass
 class Curve:
     """A 2D/3D curve segment from a B-Rep input (line, polyline, arc, spline)."""
+
     points: list[Vertex]
     layer: str
     closed: bool
@@ -38,6 +40,7 @@ class Curve:
 @dataclass
 class Surface:
     """A trimmed surface from a B-Rep input."""
+
     boundary: list[Curve]
     layer: str
 
@@ -55,6 +58,7 @@ class LayerInfo:
 
 
 # ---- Tagged-union geometry types --------------------------------------------
+
 
 @runtime_checkable
 class Geometry(Protocol):
@@ -105,6 +109,7 @@ class Cavity:
     face's normal points out of the cavity, -1 if it points into the cavity.
     face_index refers to the index in the `faces` list passed to the exporter.
     """
+
     id: int
     name: str
     volume: float

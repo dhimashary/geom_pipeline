@@ -54,12 +54,12 @@ result = repair_geometry(
     input_path="room.3dm",
     output_dir="out/",
     volume_name="RoomVolume",
-    detect_cavities=True,   # emit one Gmsh volume per enclosed region
+    detect_cavities=True,  # emit one Gmsh volume per enclosed region
 )
 
-print(result.issue_count)   # total detected issues
-print(result.outputs)       # {"obj": "out/room.obj", "geo": "out/room.geo", ...}
-print(result.report)        # {"pre": {...}, "post": {...}, "repairs": {...}}
+print(result.issue_count)  # total detected issues
+print(result.outputs)  # {"obj": "out/room.obj", "geo": "out/room.geo", ...}
+print(result.report)  # {"pre": {...}, "post": {...}, "repairs": {...}}
 ```
 
 Both functions return a `GeometryResult`:
@@ -154,7 +154,7 @@ def my_profile() -> SimulationProfile:
     """A minimal clean-up profile: dedupe + drop degenerate faces, then export OBJ."""
     return SimulationProfile(
         name="my_profile",
-        target_ir=Mesh,                       # this profile operates on meshes
+        target_ir=Mesh,  # this profile operates on meshes
         pre_validators=[
             DuplicateVerticesValidator(),
             ZeroAreaFaceValidator(),
@@ -191,8 +191,9 @@ from examples.my_profile import my_profile
 
 geom = ImporterRegistry.for_extension(".obj").load(Path("room.obj"))
 profile = my_profile()
-ctx = Context(tolerances=Tolerances(), logger=logging.getLogger("choras_geometry"),
-              profile_name=profile.name)
+ctx = Context(
+    tolerances=Tolerances(), logger=logging.getLogger("choras_geometry"), profile_name=profile.name
+)
 result = run_pipeline(geom, profile, Path("out/room"), ctx)
 ```
 

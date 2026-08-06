@@ -6,6 +6,7 @@ Exporters are checked for the files/markers they produce. Heavy cavity
 detection is disabled for the ``.geo`` exporter so the test stays a pure I/O
 check.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -26,6 +27,7 @@ def _coord_set(mesh: Mesh) -> set[tuple[float, float, float]]:
 
 # --- OBJ import --------------------------------------------------------------
 
+
 def test_obj_import_of_real_room(real_room_obj):
     mesh = ObjImporter().load(real_room_obj)
     assert isinstance(mesh, Mesh)
@@ -35,6 +37,7 @@ def test_obj_import_of_real_room(real_room_obj):
 
 
 # --- OBJ round-trip ----------------------------------------------------------
+
 
 def test_obj_export_reimport_round_trip(tmp_path, unit_cube):
     out = tmp_path / "cube.obj"
@@ -57,6 +60,7 @@ def test_obj_exporter_path_for_preserves_dotted_stem():
 
 # --- GEO export --------------------------------------------------------------
 
+
 def test_geo_export_writes_expected_markers(tmp_path, unit_cube):
     out = tmp_path / "cube.geo"
     GmshGeoExporter(detect_cavities=False).write(unit_cube, out)
@@ -71,7 +75,7 @@ def test_geo_export_writes_line_definitions(tmp_path, unit_cube):
     """AC-034.1: line definitions for all edges in the processed geometry."""
     out = tmp_path / "cube.geo"
     GmshGeoExporter(detect_cavities=False).write(unit_cube, out)
-    
+
     text = out.read_text()
     # Assert Line(...) definitions are present (cube has 12 edges)
     assert "Line(" in text
@@ -84,20 +88,22 @@ def test_geo_export_writes_line_loops(tmp_path, unit_cube):
     """AC-035.1: line loops for each face in the processed geometry."""
     out = tmp_path / "cube.geo"
     GmshGeoExporter(detect_cavities=False).write(unit_cube, out)
-    
+
     text = out.read_text()
     # Assert Line Loop(...) definitions are present (cube has 6 faces)
     assert "Line Loop(" in text
     # Count Line Loop definitions (should be ≥ 1 per face)
     loop_count = text.count("Line Loop(")
-    assert loop_count >= 6, f"Expected ≥6 Line Loop definitions (cube has 6 faces), got {loop_count}"
+    assert loop_count >= 6, (
+        f"Expected ≥6 Line Loop definitions (cube has 6 faces), got {loop_count}"
+    )
 
 
 def test_geo_export_writes_line_definitions(tmp_path, unit_cube):
     """AC-034.1: line definitions for all edges in the processed geometry."""
     out = tmp_path / "cube.geo"
     GmshGeoExporter(detect_cavities=False).write(unit_cube, out)
-    
+
     text = out.read_text()
     # Assert Line(...) definitions are present (cube has 12 edges)
     assert "Line(" in text
@@ -110,16 +116,19 @@ def test_geo_export_writes_line_loops(tmp_path, unit_cube):
     """AC-035.1: line loops for each face in the processed geometry."""
     out = tmp_path / "cube.geo"
     GmshGeoExporter(detect_cavities=False).write(unit_cube, out)
-    
+
     text = out.read_text()
     # Assert Line Loop(...) definitions are present (cube has 6 faces)
     assert "Line Loop(" in text
     # Count Line Loop definitions (should be ≥ 1 per face)
     loop_count = text.count("Line Loop(")
-    assert loop_count >= 6, f"Expected ≥6 Line Loop definitions (cube has 6 faces), got {loop_count}"
+    assert loop_count >= 6, (
+        f"Expected ≥6 Line Loop definitions (cube has 6 faces), got {loop_count}"
+    )
 
 
 # --- 3DM export --------------------------------------------------------------
+
 
 def test_three_dm_export_creates_non_empty_file(tmp_path, unit_cube):
     out = tmp_path / "cube.3dm"
@@ -129,6 +138,7 @@ def test_three_dm_export_creates_non_empty_file(tmp_path, unit_cube):
 
 
 # --- Registries --------------------------------------------------------------
+
 
 def test_importer_registry_resolves_obj():
     imp = ImporterRegistry.for_extension(".obj")

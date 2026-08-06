@@ -22,6 +22,7 @@ maps directly back to the Python face index. The tool writes JSON describing
 per-detected bounded volume which original faces bound it and with what
 orientation sign. We convert that into :class:`Cavity`.
 """
+
 from __future__ import annotations
 
 import json
@@ -127,7 +128,9 @@ def detect_cavities_native(
 
     logger.info(
         "Native volume detector: binary=%s, faces=%d, vertices=%d",
-        binary, len(faces), len(unique_vertices),
+        binary,
+        len(faces),
+        len(unique_vertices),
     )
 
     with tempfile.TemporaryDirectory(prefix="volume_detector_") as tmp:
@@ -147,9 +150,7 @@ def detect_cavities_native(
                 check=False,
             )
         except subprocess.TimeoutExpired as exc:
-            raise RuntimeError(
-                f"Native volume detector timed out after {timeout}s."
-            ) from exc
+            raise RuntimeError(f"Native volume detector timed out after {timeout}s.") from exc
 
         # Always surface the tool's own diagnostics; the C++ detector prints
         # progress/decisions to stdout/stderr which are essential when the
@@ -161,22 +162,17 @@ def detect_cavities_native(
 
         if proc.returncode != 0:
             raise RuntimeError(
-                "Native volume detector failed "
-                f"(exit {proc.returncode}): {proc.stderr.strip()}"
+                f"Native volume detector failed (exit {proc.returncode}): {proc.stderr.strip()}"
             )
 
         if not json_path.is_file():
-            raise RuntimeError(
-                "Native volume detector produced no JSON output."
-            )
+            raise RuntimeError("Native volume detector produced no JSON output.")
 
         raw = json_path.read_text()
         try:
             payload = json.loads(raw)
         except json.JSONDecodeError as exc:
-            raise RuntimeError(
-                f"Could not parse native detector JSON: {exc}"
-            ) from exc
+            raise RuntimeError(f"Could not parse native detector JSON: {exc}") from exc
 
     cavities = _cavities_from_json(payload)
     n_volumes = len(payload.get("volumes", []))
@@ -199,12 +195,13 @@ def detect_cavities_native(
             "Native volume detector ran successfully (exit 0) but reported "
             "%d volume(s) and yielded 0 usable cavities. The GEO will fall "
             "back to a single volume. Raw output: %s",
-            n_volumes, raw[:2000],
+            n_volumes,
+            raw[:2000],
         )
     else:
         logger.info(
-            "Native volume detector produced %d cavity/cavities from %d "
-            "reported volume(s).",
-            len(cavities), n_volumes,
+            "Native volume detector produced %d cavity/cavities from %d reported volume(s).",
+            len(cavities),
+            n_volumes,
         )
     return cavities

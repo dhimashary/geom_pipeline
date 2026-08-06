@@ -3,6 +3,7 @@
 Concrete repair steps live under `mesh/` (they all operate on mesh geometry).
 Kind-agnostic infrastructure (`base`, `_common`) stays at this top level.
 """
+
 from geometry_pipeline.repairs.mesh.compact_vertices import CompactVerticesRepair
 from geometry_pipeline.repairs.mesh.deduplicate_vertices import DeduplicateVerticesRepair
 from geometry_pipeline.repairs.mesh.fix_t_junctions import FixTJunctionsIterativeRepair

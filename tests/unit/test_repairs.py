@@ -5,10 +5,12 @@ and the assertions check both the returned :class:`Mesh` and the
 :class:`RepairResult` bookkeeping. Repairs that need a detector (T-junctions)
 have one injected explicitly.
 """
+
 from __future__ import annotations
 
 import pytest
 
+from conftest import make_mesh
 from geometry_pipeline.core.ir import BRep
 from geometry_pipeline.core.issues import IssueKind
 from geometry_pipeline.repairs.mesh.compact_vertices import CompactVerticesRepair
@@ -19,10 +21,8 @@ from geometry_pipeline.repairs.mesh.remove_degenerate_faces import RemoveZeroAre
 from geometry_pipeline.repairs.mesh.sort_vertices import SortVerticesDeterministicallyRepair
 from geometry_pipeline.validators.mesh.t_junctions import TJunctionsValidator
 
-from conftest import make_mesh
-
-
 # --- deduplicate_vertices ----------------------------------------------------
+
 
 def test_deduplicate_merges_coincident_vertices(ctx):
     mesh = make_mesh(
@@ -43,6 +43,7 @@ def test_deduplicate_handles_declared_issues(ctx):
 
 # --- remove_zero_area_faces -------------------------------------------------
 
+
 def test_remove_zero_area_drops_only_the_zero_area_face(ctx):
     mesh = make_mesh(
         [(0, 0, 0), (1, 0, 0), (0, 1, 0), (2, 0, 0)],
@@ -57,6 +58,7 @@ def test_remove_zero_area_drops_only_the_zero_area_face(ctx):
 
 # --- compact_vertices --------------------------------------------------------
 
+
 def test_compact_drops_unreferenced_vertices(ctx):
     mesh = make_mesh(
         [(0, 0, 0), (1, 0, 0), (0, 1, 0), (5, 5, 5)],  # v4 unused
@@ -69,6 +71,7 @@ def test_compact_drops_unreferenced_vertices(ctx):
 
 
 # --- sort_vertices -----------------------------------------------------------
+
 
 def test_sort_vertices_orders_by_coordinate_and_preserves_geometry(ctx):
     mesh = make_mesh([(1, 0, 0), (0, 0, 0), (0, 1, 0)], [[1, 2, 3]])
@@ -93,6 +96,7 @@ def test_sort_vertices_is_deterministic(ctx):
 
 # --- orient_outward ----------------------------------------------------------
 
+
 def test_orient_outward_leaves_outward_cube_untouched(ctx, unit_cube):
     _, result = FlipFacesIfMajorityInwardRepair().apply(unit_cube, [], ctx)
     assert result.details["flipped_all"] is False
@@ -109,13 +113,14 @@ def test_orient_outward_flips_inward_cube(ctx, unit_cube):
 
 # --- fix_t_junctions ---------------------------------------------------------
 
+
 def test_fix_t_junctions_resolves_the_junction(ctx):
     mesh = make_mesh(
         [
-            (0.0, 0.0, 0.0),   # 1
-            (2.0, 0.0, 0.0),   # 2
-            (1.0, 1.0, 0.0),   # 3
-            (1.0, 0.0, 0.0),   # 4  midpoint of edge (1,2)
+            (0.0, 0.0, 0.0),  # 1
+            (2.0, 0.0, 0.0),  # 2
+            (1.0, 1.0, 0.0),  # 3
+            (1.0, 0.0, 0.0),  # 4  midpoint of edge (1,2)
             (0.0, -1.0, 0.0),  # 5
             (2.0, -1.0, 0.0),  # 6
         ],
@@ -133,6 +138,7 @@ def test_fix_t_junctions_resolves_the_junction(ctx):
 
 
 # --- accept-guard ------------------------------------------------------------
+
 
 def test_repair_rejects_unsupported_geometry(ctx):
     with pytest.raises(TypeError):

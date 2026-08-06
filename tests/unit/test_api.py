@@ -4,6 +4,7 @@
 heavier ``repair_geometry`` / ``process_geometry`` entry points are exercised
 by the integration smoke test.
 """
+
 from __future__ import annotations
 
 from geometry_pipeline.api import list_issue_kinds

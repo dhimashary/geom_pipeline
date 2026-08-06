@@ -1,4 +1,5 @@
 """Vector / polygon math primitives implemented inside geometry_math."""
+
 from __future__ import annotations
 
 import math
@@ -13,7 +14,9 @@ def sub(a: Tuple[float, float, float], b: Tuple[float, float, float]) -> Tuple[f
     return (a[0] - b[0], a[1] - b[1], a[2] - b[2])
 
 
-def cross(a: Tuple[float, float, float], b: Tuple[float, float, float]) -> Tuple[float, float, float]:
+def cross(
+    a: Tuple[float, float, float], b: Tuple[float, float, float]
+) -> Tuple[float, float, float]:
     return (
         a[1] * b[2] - a[2] * b[1],
         a[2] * b[0] - a[0] * b[2],
@@ -40,7 +43,9 @@ def distance(a: Tuple[float, float, float], b: Tuple[float, float, float]) -> fl
     return norm(sub(a, b))
 
 
-def vadd(a: Tuple[float, float, float], b: Tuple[float, float, float]) -> Tuple[float, float, float]:
+def vadd(
+    a: Tuple[float, float, float], b: Tuple[float, float, float]
+) -> Tuple[float, float, float]:
     return (a[0] + b[0], a[1] + b[1], a[2] + b[2])
 
 
@@ -346,7 +351,7 @@ def point_in_polygon_2d(poly, p, tol=1e-12):
         x1, y1 = poly[i]
         x2, y2 = poly[(i + 1) % n]
 
-        crosses = ((y1 > y) != (y2 > y))
+        crosses = (y1 > y) != (y2 > y)
         if crosses:
             xinters = (x2 - x1) * (y - y1) / (y2 - y1) + x1
             if x < xinters:

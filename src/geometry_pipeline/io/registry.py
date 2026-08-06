@@ -1,4 +1,5 @@
 """Registries for importers and exporters keyed by file extension / format."""
+
 from __future__ import annotations
 
 from geometry_pipeline.core.ir import Exporter
@@ -103,9 +104,7 @@ class ExporterRegistry:
             cls._register_builtins()
             exp = cls._by_key.get(key)
             if exp is None:
-                raise ValueError(
-                    f"No exporter registered for format={fmt!r}, kind={kind!r}"
-                )
+                raise ValueError(f"No exporter registered for format={fmt!r}, kind={kind!r}")
         return exp() if isinstance(exp, type) else exp
 
     @classmethod

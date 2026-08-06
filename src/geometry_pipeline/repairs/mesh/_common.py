@@ -4,23 +4,22 @@ Start with `room_center_from_mesh` (was `mesh_helpers.py`) so callers
 can import a stable `_common` module. Additional shared helpers will be
 moved here as the refactor proceeds.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from geometry_pipeline.core.ir import Mesh
-from typing import List, Tuple, Dict, Any
-
-import math
+from typing import Any, Dict, List, Tuple
 
 from geometry_pipeline.core.ir import Face
 from geometry_pipeline.geometry_math.geometry_math import (
-    distance,
-    polygon_centroid,
     compute_face_unit_normal,
-    offset_point_along_vector,
+    distance,
     newell_normal_from_points,
+    offset_point_along_vector,
+    polygon_centroid,
 )
 
 
@@ -186,9 +185,9 @@ def flip_all_faces_if_majority_inward(
 __all__ = ["room_center_from_mesh", "flip_all_faces_if_majority_inward"]
 
 
-
-
-def get_or_create_vertex(points: list[tuple[float, float, float]], p: tuple[float, float, float], tol: float = 1e-9) -> int:
+def get_or_create_vertex(
+    points: list[tuple[float, float, float]], p: tuple[float, float, float], tol: float = 1e-9
+) -> int:
     for i, q in enumerate(points, start=1):
         if distance(p, q) <= tol:
             return i
@@ -220,7 +219,11 @@ def compact_vertices_and_remove_unused(
         vids = [mapping[vid] for vid in _face_vids(f)]
         # Always construct Mesh `Face` instances.
         new_faces.append(
-            Face(vertex_indices=vids, group=getattr(f, "group", "default"), material=getattr(f, "material", None))
+            Face(
+                vertex_indices=vids,
+                group=getattr(f, "group", "default"),
+                material=getattr(f, "material", None),
+            )
         )
 
     diag = {
@@ -353,12 +356,23 @@ def move_touching_endpoint_off_face(
             diag["len_plus"],
             diag["len_minus"],
             diag["chosen_direction"],
-            diag["old_point"][0], diag["old_point"][1], diag["old_point"][2],
-            diag["new_point"][0], diag["new_point"][1], diag["new_point"][2],
-            diag["normal"][0], diag["normal"][1], diag["normal"][2],
+            diag["old_point"][0],
+            diag["old_point"][1],
+            diag["old_point"][2],
+            diag["new_point"][0],
+            diag["new_point"][1],
+            diag["new_point"][2],
+            diag["normal"][0],
+            diag["normal"][1],
+            diag["normal"][2],
         )
 
     return points, True, diag
 
 
-__all__ = ["room_center_from_mesh", "polygon_centroid", "get_or_create_vertex", "compact_vertices_and_remove_unused"]
+__all__ = [
+    "room_center_from_mesh",
+    "polygon_centroid",
+    "get_or_create_vertex",
+    "compact_vertices_and_remove_unused",
+]

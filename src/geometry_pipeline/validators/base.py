@@ -1,4 +1,5 @@
 """Validator protocol + shared base class."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -12,7 +13,7 @@ from geometry_pipeline.validators.mesh._common import cap_and_summarize
 
 class Validator(Protocol):
     name: ClassVar[str]
-    accepts: ClassVar[set[str]]      # IR kinds, e.g. {"mesh"}
+    accepts: ClassVar[set[str]]  # IR kinds, e.g. {"mesh"}
     kind: ClassVar[IssueKind]
 
     def detect(self, geom: Geometry, ctx: Context) -> list[Issue]: ...
@@ -21,7 +22,7 @@ class Validator(Protocol):
 class BaseValidator(ABC):
     """Shared plumbing for validators.
 
-    Concrete validators only implement `detect_raw`    """
+    Concrete validators only implement `detect_raw`"""
 
     name: ClassVar[str]
     accepts: ClassVar[set[str]] = {"mesh"}

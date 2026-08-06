@@ -6,10 +6,12 @@ is also run against the clean ``unit_cube`` to guard against false positives.
 Overlap/intersection tests need Shapely's constrained Delaunay triangulation
 and skip gracefully when it is unavailable.
 """
+
 from __future__ import annotations
 
 import pytest
 
+from conftest import make_mesh
 from geometry_pipeline.core.issues import IssueKind
 from geometry_pipeline.validators.mesh.boundary_edges import BoundaryEdgesValidator
 from geometry_pipeline.validators.mesh.collinear_faces import CollinearFacesValidator
@@ -22,14 +24,13 @@ from geometry_pipeline.validators.mesh.possible_holes import PossibleHolesValida
 from geometry_pipeline.validators.mesh.small_faces import SmallFacesValidator
 from geometry_pipeline.validators.mesh.t_junctions import TJunctionsValidator
 
-from conftest import make_mesh
-
 
 def _kinds(issues) -> set[IssueKind]:
     return {i.kind for i in issues}
 
 
 # --- duplicate_vertex --------------------------------------------------------
+
 
 def test_duplicate_vertices_detected(ctx):
     mesh = make_mesh(
@@ -47,6 +48,7 @@ def test_duplicate_vertices_none_on_clean_cube(ctx, unit_cube):
 
 # --- zero_area_face ---------------------------------------------------------
 
+
 def test_zero_area_face_detected_for_zero_area_triangle(ctx):
     mesh = make_mesh([(0, 0, 0), (1, 0, 0), (2, 0, 0)], [[1, 2, 3]])
     issues = ZeroAreaFaceValidator().detect(mesh, ctx)
@@ -59,6 +61,7 @@ def test_zero_area_face_none_on_clean_cube(ctx, unit_cube):
 
 
 # --- non_planar_face ---------------------------------------------------------
+
 
 def test_non_planar_face_detected(ctx):
     mesh = make_mesh(
@@ -76,6 +79,7 @@ def test_non_planar_face_none_on_clean_cube(ctx, unit_cube):
 
 # --- boundary_edge -----------------------------------------------------------
 
+
 def test_boundary_edges_detected_for_lone_triangle(ctx):
     mesh = make_mesh([(0, 0, 0), (1, 0, 0), (0, 1, 0)], [[1, 2, 3]])
     issues = BoundaryEdgesValidator().detect(mesh, ctx)
@@ -89,6 +93,7 @@ def test_boundary_edges_none_on_closed_cube(ctx, unit_cube):
 
 # --- possible_hole -----------------------------------------------------------
 
+
 def test_possible_hole_detected_for_open_cube(ctx, open_cube):
     issues = PossibleHolesValidator().detect(open_cube, ctx)
     assert len(issues) == 1  # the single empty top loop
@@ -100,6 +105,7 @@ def test_possible_hole_none_on_closed_cube(ctx, unit_cube):
 
 
 # --- small_face --------------------------------------------------------------
+
 
 def test_small_face_detected(ctx):
     mesh = make_mesh([(0, 0, 0), (0.05, 0, 0), (0, 0.05, 0)], [[1, 2, 3]])
@@ -114,6 +120,7 @@ def test_small_face_none_on_clean_cube(ctx, unit_cube):
 
 # --- collinear_face ----------------------------------------------------------
 
+
 def test_collinear_face_detected(ctx):
     mesh = make_mesh([(0, 0, 0), (1, 0, 0), (2, 0, 0)], [[1, 2, 3]])
     issues = CollinearFacesValidator().detect(mesh, ctx)
@@ -127,15 +134,16 @@ def test_collinear_face_none_on_clean_cube(ctx, unit_cube):
 
 # --- t_junction --------------------------------------------------------------
 
+
 def test_t_junction_detected(ctx):
     # Vertex 4 sits at the midpoint of face F1's edge (1->2) but belongs only
     # to face F2, i.e. a classic T-junction.
     mesh = make_mesh(
         [
-            (0.0, 0.0, 0.0),   # 1
-            (2.0, 0.0, 0.0),   # 2
-            (1.0, 1.0, 0.0),   # 3
-            (1.0, 0.0, 0.0),   # 4  midpoint of edge (1,2)
+            (0.0, 0.0, 0.0),  # 1
+            (2.0, 0.0, 0.0),  # 2
+            (1.0, 1.0, 0.0),  # 3
+            (1.0, 0.0, 0.0),  # 4  midpoint of edge (1,2)
             (0.0, -1.0, 0.0),  # 5
             (2.0, -1.0, 0.0),  # 6
         ],
@@ -152,18 +160,19 @@ def test_t_junction_none_on_clean_cube(ctx, unit_cube):
 
 # --- intersection ------------------------------------------------------------
 
+
 def test_intersection_detected(ctx):
     pytest.importorskip("shapely")
     # Triangle A lies in z=0; triangle B is vertical and its edge (4->5)
     # pierces A's interior at (0.5, 0.5, 0).
     mesh = make_mesh(
         [
-            (0.0, 0.0, 0.0),   # 1  A
-            (2.0, 0.0, 0.0),   # 2  A
-            (0.0, 2.0, 0.0),   # 3  A
+            (0.0, 0.0, 0.0),  # 1  A
+            (2.0, 0.0, 0.0),  # 2  A
+            (0.0, 2.0, 0.0),  # 3  A
             (0.5, 0.5, -1.0),  # 4  B below plane
-            (0.5, 0.5, 1.0),   # 5  B above plane
-            (0.5, 3.0, 1.0),   # 6  B (second crossing lands outside A)
+            (0.5, 0.5, 1.0),  # 5  B above plane
+            (0.5, 3.0, 1.0),  # 6  B (second crossing lands outside A)
         ],
         [[1, 2, 3], [4, 5, 6]],
     )
@@ -179,13 +188,18 @@ def test_intersection_none_on_clean_cube(ctx, unit_cube):
 
 # --- overlapping_face --------------------------------------------------------
 
+
 def test_overlapping_faces_detected(ctx):
     pytest.importorskip("shapely")
     # Two identical, coplanar triangles occupying the same region.
     mesh = make_mesh(
         [
-            (0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0),  # triangle A
-            (0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0),  # triangle B
+            (0.0, 0.0, 0.0),
+            (1.0, 0.0, 0.0),
+            (0.0, 1.0, 0.0),  # triangle A
+            (0.0, 0.0, 0.0),
+            (1.0, 0.0, 0.0),
+            (0.0, 1.0, 0.0),  # triangle B
         ],
         [[1, 2, 3], [4, 5, 6]],
     )

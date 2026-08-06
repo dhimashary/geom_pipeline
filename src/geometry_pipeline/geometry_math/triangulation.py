@@ -1,16 +1,17 @@
 """Constrained Delaunay triangulation helper implemented in geometry_math."""
+
 from __future__ import annotations
 
 from typing import List, Tuple
 
 try:
-    from shapely.geometry import Polygon
     from shapely import constrained_delaunay_triangles
+    from shapely.geometry import Polygon
 except Exception:
     Polygon = None  # type: ignore
     constrained_delaunay_triangles = None  # type: ignore
 
-from geometry_pipeline.geometry_math.geometry_math import newell_normal_from_points, area2
+from geometry_pipeline.geometry_math.geometry_math import area2, newell_normal_from_points
 
 
 def triangulate_face_cdt_shapely(
@@ -55,7 +56,10 @@ def triangulate_face_cdt_shapely(
         cleaned_2d.append(p2)
 
     if len(cleaned_2d) >= 2:
-        if abs(cleaned_2d[0][0] - cleaned_2d[-1][0]) <= tol and abs(cleaned_2d[0][1] - cleaned_2d[-1][1]) <= tol:
+        if (
+            abs(cleaned_2d[0][0] - cleaned_2d[-1][0]) <= tol
+            and abs(cleaned_2d[0][1] - cleaned_2d[-1][1]) <= tol
+        ):
             cleaned_ids.pop()
             cleaned_2d.pop()
 
@@ -93,7 +97,7 @@ def triangulate_face_cdt_shapely(
 
         vids = []
         ok = True
-        for (x, y) in coords:
+        for x, y in coords:
             vid = coord_to_vid.get(key(x, y))
             if vid is None:
                 ok = False

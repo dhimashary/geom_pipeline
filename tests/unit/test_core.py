@@ -4,6 +4,7 @@ These cover the pure value objects and helpers that every other layer depends
 on: issue identity/serialisation, the geometry IR, tolerances, snapshot
 diffing, and the pipeline result accessors.
 """
+
 from __future__ import annotations
 
 import dataclasses
@@ -27,8 +28,8 @@ from geometry_pipeline.core.report import (
 )
 from geometry_pipeline.core.tolerances import Tolerances
 
-
 # --- Issue -------------------------------------------------------------------
+
 
 def _issue(kind: IssueKind = IssueKind.T_JUNCTION, payload: dict | None = None) -> Issue:
     return Issue.create(kind, DetectionStage.PRE, payload=payload or {})
@@ -97,6 +98,7 @@ def test_issuekind_values_are_stable_strings():
 
 # --- IR ----------------------------------------------------------------------
 
+
 def test_mesh_defaults_are_empty_and_independent():
     a, b = Mesh(), Mesh()
     assert a.vertices == [] and a.faces == [] and a.materials == {} and a.metadata == {}
@@ -125,6 +127,7 @@ def test_face_holds_indices_group_and_material():
 
 # --- Tolerances --------------------------------------------------------------
 
+
 def test_tolerances_have_documented_defaults():
     t = Tolerances()
     assert t.vertex_merge == pytest.approx(1e-2)
@@ -143,6 +146,7 @@ def test_tolerances_overridable_at_construction():
 
 
 # --- Snapshot diffing --------------------------------------------------------
+
 
 def _snapshot(*issues: Issue) -> ValidationSnapshot:
     return ValidationSnapshot(when=DetectionStage.PRE, issues=list(issues))
@@ -168,6 +172,7 @@ def test_diff_identical_snapshots_has_no_changes():
 
 
 # --- PipelineResult ----------------------------------------------------------
+
 
 def test_pipeline_result_initial_and_final_snapshots():
     first = ValidationSnapshot(when=DetectionStage.PRE, issues=[_issue()])
@@ -207,6 +212,7 @@ def test_repair_report_defaults():
 
 
 # --- to_jsonable edge cases (complements test_jsonable.py) -------------------
+
 
 def test_to_jsonable_passes_through_native_scalars():
     assert to_jsonable(None) is None

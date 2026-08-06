@@ -9,23 +9,23 @@
 * ``RepairPlcByOffsetRepair`` — last-resort fallback: nudge a touching
   endpoint along the touched face's normal by ``tolerances.plc_offset``.
 """
+
 from __future__ import annotations
 
 from typing import ClassVar
 
 from geometry_pipeline.core.context import Context
-from geometry_pipeline.core.ir import Mesh
+from geometry_pipeline.core.ir import Mesh, Vertex
 from geometry_pipeline.core.issues import Issue, IssueKind
-from geometry_pipeline.core.ir import Vertex
 from geometry_pipeline.core.report import RepairResult
 from geometry_pipeline.repairs.base import BaseRepair
 from geometry_pipeline.repairs.mesh._common import room_center_from_mesh
-from geometry_pipeline.validators.base import Validator
 from geometry_pipeline.repairs.mesh._intersection_repairs import (
     repair_plc_by_offset_iterative,
     repair_plc_single_splits_iterative,
     trim_segment_face_intersections_iterative,
 )
+from geometry_pipeline.validators.base import Validator
 
 
 def _affected(issues: list[Issue]) -> list[str]:
@@ -56,7 +56,8 @@ class TrimSegmentFaceIntersectionsRepair(BaseRepair):
         before_points = len(points)
 
         new_faces, new_points, changed_any, diag = trim_segment_face_intersections_iterative(
-            faces, points,
+            faces,
+            points,
             room_center_from_mesh(geom),
             max_iters=max_iters,
             tol=ctx.tolerances.clipping,
@@ -123,7 +124,8 @@ class RepairPlcSingleSplitsRepair(BaseRepair):
         before = len(faces)
 
         result_tuple = repair_plc_single_splits_iterative(
-            faces, points,
+            faces,
+            points,
             room_center_from_mesh(geom),
             logger=ctx.logger,
             max_iters=max_iters,
@@ -198,7 +200,8 @@ class RepairPlcByOffsetRepair(BaseRepair):
         before = len(faces)
 
         result_tuple = repair_plc_by_offset_iterative(
-            faces, points,
+            faces,
+            points,
             logger=ctx.logger,
             max_iters=max_iters,
             offset_m=ctx.tolerances.plc_offset,
@@ -247,4 +250,3 @@ class RepairPlcByOffsetRepair(BaseRepair):
             issues=issues,
             affected_ids=_affected(issues),
         )
-

@@ -1,10 +1,10 @@
 """Registry for IR <-> IR converters (e.g. BRep -> Mesh tessellation)."""
+
 from __future__ import annotations
 
 from typing import Callable
 
 from geometry_pipeline.core.ir import Geometry
-
 
 Converter = Callable[[Geometry], Geometry]
 

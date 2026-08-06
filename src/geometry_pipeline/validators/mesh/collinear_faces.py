@@ -13,6 +13,7 @@ regardless of their length.
 
 Detection-only (WARN); no repair is wired.
 """
+
 from __future__ import annotations
 
 from typing import ClassVar
@@ -66,16 +67,18 @@ class CollinearFacesValidator(BaseValidator):
                     max_perp = perp
 
             if max_perp < max_deviation:
-                raw.append({
-                    "fid": getattr(f, "fid", fid),
-                    "max_deviation_m": max_perp,
-                    "threshold_m": max_deviation,
-                    "span_m": span,
-                    "elements": {
-                        "type": "face",
-                        "points": pts,
-                    },
-                })
+                raw.append(
+                    {
+                        "fid": getattr(f, "fid", fid),
+                        "max_deviation_m": max_perp,
+                        "threshold_m": max_deviation,
+                        "span_m": span,
+                        "elements": {
+                            "type": "face",
+                            "points": pts,
+                        },
+                    }
+                )
 
         return raw
 

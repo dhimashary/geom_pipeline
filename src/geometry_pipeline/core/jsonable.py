@@ -12,6 +12,7 @@ JSON consumers must not have to special-case.
 serialised output always contains native JSON types, independent of the numpy
 version in use.
 """
+
 from __future__ import annotations
 
 from typing import Any

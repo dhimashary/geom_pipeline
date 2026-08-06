@@ -23,6 +23,7 @@ Detection strategy
    (so long, micron-thin slivers from edge-adjacent faces are discarded) the
    pair is reported.
 """
+
 from __future__ import annotations
 
 from typing import Any, ClassVar, Dict, List, Tuple
@@ -118,36 +119,41 @@ def _tris_to_polygon(
 
 def _is_interior_overlap(inter, poly_a, poly_b, interior_point_tolerance: float = 1e-6) -> bool:
     """Check if intersection represents true interior overlap vs. just edge-touching.
-    
+
     Edge-adjacent faces only touch at boundaries (edges). True overlap means:
     1. The intersection is 2D (has area), not just a line/point
     2. The intersection is NOT a thin sliver (high aspect ratio from a gap)
-    
+
     This filters false positives from faces separated by tiny gaps.
     """
     # If intersection is a line or point (1-dimensional), it's just touching
-    if inter.is_empty or inter.geom_type in ("LineString", "MultiLineString", "Point", "MultiPoint"):
+    if inter.is_empty or inter.geom_type in (
+        "LineString",
+        "MultiLineString",
+        "Point",
+        "MultiPoint",
+    ):
         return False
-    
+
     try:
         inter_area = float(getattr(inter, "area", 0.0))
         inter_length = float(getattr(inter, "length", 0.0))
-        
+
         if inter_area <= 0.0 or inter_length <= 0.0:
             return False
-        
+
         # Detect thin slivers: if the intersection is very thin relative to its perimeter,
         # it's likely just an edge artifact from a gap between faces.
         # A thin vertical or horizontal strip from edge-touching will have:
         # - Very small area
         # - Long perimeter relative to area (high "aspect ratio")
-        # 
+        #
         # Rough heuristic: for a true overlap, expect area/perimeter ratio > 0.01
         # (for a 1x1 square, this is 1/4 = 0.25; for a 0.001x1 sliver, this is 0.001/2.002 ~ 0.0005)
         area_perimeter_ratio = inter_area / inter_length
         if area_perimeter_ratio < 0.001:  # Threshold for "too thin to be real overlap"
             return False
-        
+
         return True
     except Exception:
         # If we can't determine, assume it's valid to avoid discarding valid cases
@@ -195,17 +201,23 @@ def detect_overlapping_faces_mesh(
                 bb = tbb
             else:
                 bb = (
-                    min(bb[0], tbb[0]), min(bb[1], tbb[1]), min(bb[2], tbb[2]),
-                    max(bb[3], tbb[3]), max(bb[4], tbb[4]), max(bb[5], tbb[5]),
+                    min(bb[0], tbb[0]),
+                    min(bb[1], tbb[1]),
+                    min(bb[2], tbb[2]),
+                    max(bb[3], tbb[3]),
+                    max(bb[4], tbb[4]),
+                    max(bb[5], tbb[5]),
                 )
-        face_infos.append({
-            "fid": getattr(face, "fid", fi),
-            "vids": vids,
-            "normal": unit_n,
-            "point": points[vids[0] - 1],
-            "aabb": bb,
-            "tris": tris,
-        })
+        face_infos.append(
+            {
+                "fid": getattr(face, "fid", fi),
+                "vids": vids,
+                "normal": unit_n,
+                "point": points[vids[0] - 1],
+                "aabb": bb,
+                "tris": tris,
+            }
+        )
 
     reports: List[Dict[str, Any]] = []
     n_faces = len(face_infos)
@@ -257,24 +269,26 @@ def detect_overlapping_faces_mesh(
 
             coords_a = [points[vid - 1] for vid in fa["vids"]]
             coords_b = [points[vid - 1] for vid in fb["vids"]]
-            reports.append({
-                "elements": [
-                    {
-                        "type": "face",
-                        "points": [[c[0], c[1], c[2]] for c in coords_a],
+            reports.append(
+                {
+                    "elements": [
+                        {
+                            "type": "face",
+                            "points": [[c[0], c[1], c[2]] for c in coords_a],
+                        },
+                        {
+                            "type": "face",
+                            "points": [[c[0], c[1], c[2]] for c in coords_b],
+                        },
+                    ],
+                    "details": {
+                        "face_a_fid": fa["fid"],
+                        "face_b_fid": fb["fid"],
+                        "overlap_area_m2": overlap_area,
+                        "plane_offset_m": offset,
                     },
-                    {
-                        "type": "face",
-                        "points": [[c[0], c[1], c[2]] for c in coords_b],
-                    },
-                ],
-                "details": {
-                    "face_a_fid": fa["fid"],
-                    "face_b_fid": fb["fid"],
-                    "overlap_area_m2": overlap_area,
-                    "plane_offset_m": offset,
-                },
-            })
+                }
+            )
             if len(reports) >= max_reports:
                 return reports
 

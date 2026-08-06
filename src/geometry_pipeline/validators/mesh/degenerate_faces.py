@@ -1,8 +1,8 @@
 """Validator: detects faces with effectively zero area."""
+
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
-from typing import ClassVar
+from typing import Any, ClassVar, Dict, List, Tuple
 
 from geometry_pipeline.core.context import Context
 from geometry_pipeline.core.ir import Mesh
@@ -35,12 +35,14 @@ def detect_zero_area_faces_mesh(
 
         if status == "fatal":
             coordinates = [points[vid - 1] for vid in vids]
-            zero_area_faces.append({
-                "elements": {
-                    "type": "face",
-                    "points": [[coord[0], coord[1], coord[2]] for coord in coordinates],
-                },
-            })
+            zero_area_faces.append(
+                {
+                    "elements": {
+                        "type": "face",
+                        "points": [[coord[0], coord[1], coord[2]] for coord in coordinates],
+                    },
+                }
+            )
 
     return zero_area_faces
 
@@ -66,12 +68,14 @@ def detect_zero_area_faces(
 
         if status == "fatal":
             coordinates = [points[vid - 1] for vid in vids]
-            zero_area_faces.append({
-                "elements": {
-                    "type": "face",
-                    "points": [[coord[0], coord[1], coord[2]] for coord in coordinates],
-                },
-            })
+            zero_area_faces.append(
+                {
+                    "elements": {
+                        "type": "face",
+                        "points": [[coord[0], coord[1], coord[2]] for coord in coordinates],
+                    },
+                }
+            )
 
     return zero_area_faces
 

@@ -1,12 +1,12 @@
 """Validator: detects closed boundary loops (candidate holes in the surface)."""
+
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Dict, List, Set, Tuple
-from typing import ClassVar
+from typing import Any, ClassVar, Dict, List, Set, Tuple
 
 from geometry_pipeline.core.context import Context
-from geometry_pipeline.core.ir import Mesh, Face
+from geometry_pipeline.core.ir import Face, Mesh
 from geometry_pipeline.core.issues import IssueKind
 from geometry_pipeline.core.tolerances import Tolerances
 from geometry_pipeline.geometry_math.geometry_math import (
@@ -293,9 +293,7 @@ def detect_possible_holes_from_faces(
         unique_vertices,
         containment_tol_m=containment_tol_m,
     )
-    boundary_edges = {
-        e for e in boundary_edges if edge_to_faces[e][0] in room_face_ids
-    }
+    boundary_edges = {e for e in boundary_edges if edge_to_faces[e][0] in room_face_ids}
     if not boundary_edges:
         return []
 
@@ -345,10 +343,14 @@ def detect_possible_holes_from_faces(
         # Skip outer rims of open/floating surfaces: if the region enclosed by
         # the loop is filled by coplanar surface it is the perimeter of a sheet
         # (e.g. a table top), not a hole.
-        if _loop_interior_is_filled(loop_vids, faces, unique_vertices, coplanar_tol_m=coplanar_tol_m):
+        if _loop_interior_is_filled(
+            loop_vids, faces, unique_vertices, coplanar_tol_m=coplanar_tol_m
+        ):
             continue
 
-        elements = [{"type": "edge", "points": [list(edge[0]), list(edge[1])]} for edge in edge_loop]
+        elements = [
+            {"type": "edge", "points": [list(edge[0]), list(edge[1])]} for edge in edge_loop
+        ]
         loops.append({"elements": elements})
 
     return loops

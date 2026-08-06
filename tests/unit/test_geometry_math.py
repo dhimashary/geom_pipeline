@@ -4,6 +4,7 @@ These are pure numeric functions with no I/O, so every case uses a small
 hand-computed input with a known exact answer. Note the polygon helpers take
 **1-based** vertex ids into the ``points`` list.
 """
+
 from __future__ import annotations
 
 import math
@@ -16,7 +17,6 @@ from geometry_pipeline.geometry_math.predicates import (
     classify_face_planarity_m,
 )
 
-
 # A unit square in the z=0 plane, CCW. Vertex ids 1..4 index this list.
 SQUARE = [
     (0.0, 0.0, 0.0),
@@ -28,6 +28,7 @@ SQUARE_IDS = [1, 2, 3, 4]
 
 
 # --- Vector primitives -------------------------------------------------------
+
 
 def test_uedge_is_order_independent():
     assert gm.uedge(3, 1) == (1, 3)
@@ -57,6 +58,7 @@ def test_unit_of_zero_vector_is_zero():
 
 # --- Bounding boxes ----------------------------------------------------------
 
+
 def test_aabb_of_tri_and_seg():
     assert gm.aabb_of_tri((0, 0, 0), (2, 1, 0), (1, 3, 5)) == (0, 0, 0, 2, 3, 5)
     assert gm.aabb_of_seg((0, 0, 0), (1, -2, 3)) == (0, -2, 0, 1, 0, 3)
@@ -77,36 +79,32 @@ def test_aabb_overlap_respects_padding():
 
 # --- Segment / triangle intersection ----------------------------------------
 
+
 def _tri():
     return (0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)
 
 
 def test_segment_through_triangle_hits():
     a, b, c = _tri()
-    hit, t, u, v = gm.segment_intersects_triangle(
-        (0.25, 0.25, -1.0), (0.25, 0.25, 1.0), a, b, c
-    )
+    hit, t, u, v = gm.segment_intersects_triangle((0.25, 0.25, -1.0), (0.25, 0.25, 1.0), a, b, c)
     assert hit is True
     assert t == pytest.approx(0.5)
 
 
 def test_segment_missing_triangle_does_not_hit():
     a, b, c = _tri()
-    hit, *_ = gm.segment_intersects_triangle(
-        (2.0, 2.0, -1.0), (2.0, 2.0, 1.0), a, b, c
-    )
+    hit, *_ = gm.segment_intersects_triangle((2.0, 2.0, -1.0), (2.0, 2.0, 1.0), a, b, c)
     assert hit is False
 
 
 def test_segment_parallel_to_triangle_plane_does_not_hit():
     a, b, c = _tri()
-    hit, *_ = gm.segment_intersects_triangle(
-        (0.25, 0.25, 1.0), (0.75, 0.25, 1.0), a, b, c
-    )
+    hit, *_ = gm.segment_intersects_triangle((0.25, 0.25, 1.0), (0.75, 0.25, 1.0), a, b, c)
     assert hit is False
 
 
 # --- Polygon area / normal ---------------------------------------------------
+
 
 def test_polygon_area_3d_unit_square():
     assert gm.polygon_area_3d(SQUARE_IDS, SQUARE) == pytest.approx(1.0)
@@ -134,6 +132,7 @@ def test_polygon_centroid_rejects_empty_loop():
 
 
 # --- 2D predicates -----------------------------------------------------------
+
 
 def test_orient_sign():
     assert gm.orient((0, 0), (1, 0), (0, 1)) > 0  # CCW
@@ -176,6 +175,7 @@ def test_point_segment_distance_2d_perpendicular_and_clamped():
 
 # --- Projection --------------------------------------------------------------
 
+
 def test_project_face_to_2d_drops_dominant_axis():
     poly2d, dropped = gm.project_face_to_2d(SQUARE_IDS, SQUARE)
     assert dropped == "z"
@@ -187,6 +187,7 @@ def test_offset_point_along_vector():
 
 
 # --- Face predicates ---------------------------------------------------------
+
 
 def test_degeneracy_ok_for_real_triangle():
     tri = [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)]
@@ -225,6 +226,7 @@ def test_planarity_fatal_for_strongly_non_planar_quad():
 
 
 # --- Triangulation (requires shapely) ----------------------------------------
+
 
 def test_triangulate_square_covers_all_vertices():
     shapely = pytest.importorskip("shapely")

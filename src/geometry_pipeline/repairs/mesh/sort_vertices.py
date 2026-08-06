@@ -4,6 +4,7 @@ Sorting is keyed on rounded coordinates (8 decimals) so that runs on the
 same input produce byte-identical Gmsh `.geo` output even when the
 original OBJ file ordering changes.
 """
+
 from __future__ import annotations
 
 from typing import ClassVar

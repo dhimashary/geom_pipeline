@@ -1,13 +1,12 @@
 """Validator: detects segment-facet intersections (CDT-based)."""
+
 from __future__ import annotations
 
 import math
 from collections import defaultdict
-from typing import Any, Dict, List, Tuple
-from typing import ClassVar
+from typing import Any, ClassVar, Dict, List
 
 from geometry_pipeline.core.context import Context
-from geometry_pipeline.core.ir import Mesh
 from geometry_pipeline.core.ir import Mesh
 from geometry_pipeline.core.issues import IssueKind
 from geometry_pipeline.geometry_math.geometry_math import (
@@ -145,8 +144,8 @@ def _coplanar_segment_face_overlap(
             continue  # segment parallel to this polygon edge
         apx = a2[0] - s0[0]
         apy = a2[1] - s0[1]
-        s = (apx * ey - apy * ex) / den   # param along the segment
-        t = (apx * dy - apy * dx) / den   # param along the polygon edge
+        s = (apx * ey - apy * ex) / den  # param along the segment
+        t = (apx * dy - apy * dx) / den  # param along the polygon edge
         if -tol_2d <= s <= 1.0 + tol_2d and -tol_2d <= t <= 1.0 + tol_2d:
             cuts.append(min(1.0, max(0.0, s)))
 
@@ -221,20 +220,22 @@ def detect_segment_facet_intersections_cdt_mesh(
                 continue
 
         pts3 = [points[pid - 1] for pid in poly]
-        face_polys.append({
-            "fid": getattr(face, "fid", fi),
-            "vids": poly,
-            "vset": set(poly),
-            "aabb": (
-                min(p[0] for p in pts3),
-                min(p[1] for p in pts3),
-                min(p[2] for p in pts3),
-                max(p[0] for p in pts3),
-                max(p[1] for p in pts3),
-                max(p[2] for p in pts3),
-            ),
-            "planar_flag": planar_flag,
-        })
+        face_polys.append(
+            {
+                "fid": getattr(face, "fid", fi),
+                "vids": poly,
+                "vset": set(poly),
+                "aabb": (
+                    min(p[0] for p in pts3),
+                    min(p[1] for p in pts3),
+                    min(p[2] for p in pts3),
+                    max(p[0] for p in pts3),
+                    max(p[1] for p in pts3),
+                    max(p[2] for p in pts3),
+                ),
+                "planar_flag": planar_flag,
+            }
+        )
 
         if len(poly) == 3:
             tris = [poly[:]]
@@ -249,13 +250,15 @@ def detect_segment_facet_intersections_cdt_mesh(
                 continue
             a, b, c = tri
             A, B, C = points[a - 1], points[b - 1], points[c - 1]
-            tri_list.append({
-                "fid": getattr(face, "fid", fi),
-                "face_vids": poly,
-                "tri": (a, b, c),
-                "aabb": aabb_of_tri(A, B, C),
-                "planar_flag": planar_flag,
-            })
+            tri_list.append(
+                {
+                    "fid": getattr(face, "fid", fi),
+                    "face_vids": poly,
+                    "tri": (a, b, c),
+                    "aabb": aabb_of_tri(A, B, C),
+                    "planar_flag": planar_flag,
+                }
+            )
 
     edge_to_faces = defaultdict(set)
     edge_set = set()
@@ -274,7 +277,7 @@ def detect_segment_facet_intersections_cdt_mesh(
     tri_vset = [set(t["tri"]) for t in tri_list]
 
     reports = []
-    for (u, v) in edge_set:
+    for u, v in edge_set:
         P0 = points[u - 1]
         P1 = points[v - 1]
         seg_bb = aabb_of_seg(P0, P1)
@@ -298,21 +301,23 @@ def detect_segment_facet_intersections_cdt_mesh(
 
             facet_fid_coordinates = [points[vid - 1] for vid in tinfo["face_vids"]]
 
-            reports.append({
-                "edge": (u, v),
-                "edge_coordinates": [P0, P1],
-                "edge_fids": sorted(edge_to_faces[(u, v) if u < v else (v, u)]),
-                "facet_fid": tinfo["fid"],
-                "facet_fid_coordinates": facet_fid_coordinates,
-                "facet_tri": (a, b, c),
-                "point": I,
-                "t_param": float(t),
-                "bary_u": float(uu),
-                "bary_v": float(vv),
-                "bary_w": float(1.0 - uu - vv),
-                "hit_type": hit_type,
-                "facet_planarity_flag": tinfo["planar_flag"],
-            })
+            reports.append(
+                {
+                    "edge": (u, v),
+                    "edge_coordinates": [P0, P1],
+                    "edge_fids": sorted(edge_to_faces[(u, v) if u < v else (v, u)]),
+                    "facet_fid": tinfo["fid"],
+                    "facet_fid_coordinates": facet_fid_coordinates,
+                    "facet_tri": (a, b, c),
+                    "point": I,
+                    "t_param": float(t),
+                    "bary_u": float(uu),
+                    "bary_v": float(vv),
+                    "bary_w": float(1.0 - uu - vv),
+                    "hit_type": hit_type,
+                    "facet_planarity_flag": tinfo["planar_flag"],
+                }
+            )
             if len(reports) >= max_reports:
                 return reports
 
@@ -320,7 +325,7 @@ def detect_segment_facet_intersections_cdt_mesh(
     # segments parallel to a face plane (det ~ 0), so an edge lying flat on a
     # face never appears above. Detect those interior overlaps here at polygon
     # granularity (one report per overlapping edge/face pair).
-    for (u, v) in edge_set:
+    for u, v in edge_set:
         P0 = points[u - 1]
         P1 = points[v - 1]
         seg_bb = aabb_of_seg(P0, P1)
@@ -343,19 +348,21 @@ def detect_segment_facet_intersections_cdt_mesh(
             if overlap is None:
                 continue
 
-            reports.append({
-                "edge": (u, v),
-                "edge_coordinates": [P0, P1],
-                "edge_fids": sorted(edge_to_faces[(u, v) if u < v else (v, u)]),
-                "facet_fid": finfo["fid"],
-                "facet_fid_coordinates": [points[vid - 1] for vid in finfo["vids"]],
-                "point": overlap["mid"],
-                "overlap_coordinates": [overlap["enter"], overlap["exit"]],
-                "overlap_length": overlap["overlap_length"],
-                "t_param": overlap["t_enter"],
-                "hit_type": "coplanar_segment_face_overlap",
-                "facet_planarity_flag": finfo["planar_flag"],
-            })
+            reports.append(
+                {
+                    "edge": (u, v),
+                    "edge_coordinates": [P0, P1],
+                    "edge_fids": sorted(edge_to_faces[(u, v) if u < v else (v, u)]),
+                    "facet_fid": finfo["fid"],
+                    "facet_fid_coordinates": [points[vid - 1] for vid in finfo["vids"]],
+                    "point": overlap["mid"],
+                    "overlap_coordinates": [overlap["enter"], overlap["exit"]],
+                    "overlap_length": overlap["overlap_length"],
+                    "t_param": overlap["t_enter"],
+                    "hit_type": "coplanar_segment_face_overlap",
+                    "facet_planarity_flag": finfo["planar_flag"],
+                }
+            )
             if len(reports) >= max_reports:
                 return reports
 
@@ -388,8 +395,8 @@ class IntersectionsValidator(BaseValidator):
         # Build the frontend `elements` shape here so the report translator
         # stays generic (no per-kind branches in reporting/frontend_schema).
         out["elements"] = [
-            {"type": "edge",   "points": out.get("edge_coordinates", [])},
-            {"type": "face",   "points": out.get("facet_fid_coordinates", [])},
+            {"type": "edge", "points": out.get("edge_coordinates", [])},
+            {"type": "face", "points": out.get("facet_fid_coordinates", [])},
             {"type": "vertex", "points": [out.get("point", [0, 0, 0])]},
         ]
         return out

@@ -71,3 +71,14 @@ show_missing = true
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# Explicit rule set so linting is deterministic and self-contained (not inherited
+# from any global/default Ruff config). These families cover the flake8 stack:
+#   E/W  -> pycodestyle, F -> pyflakes, I -> isort (import sorting).
+select = ["E", "W", "F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+# Test modules deliberately keep unused imports/fixtures and re-imports.
+"tests/**" = ["F401", "F811"]

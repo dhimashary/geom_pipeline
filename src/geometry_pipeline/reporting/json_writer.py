@@ -1,14 +1,15 @@
 from __future__ import annotations
-from pathlib import Path
+
 import json
-from typing import Any
 import logging
+from pathlib import Path
+from typing import Any
 
 # Module logger
 logger = logging.getLogger(__name__)
 
-from geometry_pipeline.core.report import PipelineResult
 from geometry_pipeline.core.jsonable import to_jsonable
+from geometry_pipeline.core.report import PipelineResult
 
 
 class JsonReportWriter:
@@ -46,7 +47,6 @@ class JsonReportWriter:
         self.issue_source = issue_source
         self.write_report = write_report
         self._result: PipelineResult | None = None
-    
 
     def set_pipeline_result(self, result: PipelineResult) -> None:
         self._result = result
@@ -74,7 +74,7 @@ class JsonReportWriter:
 
             def snapshot_report(x):
                 return {"pre": {}, "post": {}, "repairs": []}
-        
+
         if self.issue_source == "composite":
             issues = self._result.composite_issues
         elif self.issue_source == "final":

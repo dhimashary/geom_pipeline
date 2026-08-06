@@ -5,6 +5,7 @@ that a failing assertion points unambiguously at a single validator/repair.
 The one real-world file, ``tests/models/vert2.0.6.obj``, carries every defect
 kind at once and is reserved for the end-to-end smoke test.
 """
+
 from __future__ import annotations
 
 import logging
@@ -15,7 +16,6 @@ import pytest
 from geometry_pipeline.core.context import Context
 from geometry_pipeline.core.ir import Face, Mesh, Vertex
 from geometry_pipeline.core.tolerances import Tolerances
-
 
 # --- Locations ---------------------------------------------------------------
 
@@ -38,6 +38,7 @@ def real_room_obj() -> Path:
 
 
 # --- Mesh construction helpers -----------------------------------------------
+
 
 def make_mesh(
     vertices: list[tuple[float, float, float]],

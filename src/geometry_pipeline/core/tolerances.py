@@ -1,5 +1,5 @@
-"""Canonical tolerance bundle attached to a SimulationProfile.
-"""
+"""Canonical tolerance bundle attached to a SimulationProfile."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

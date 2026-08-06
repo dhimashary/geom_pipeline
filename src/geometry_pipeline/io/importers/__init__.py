@@ -6,8 +6,8 @@ from geometry_pipeline.io.importers.obj import ObjImporter
 from geometry_pipeline.io.importers.rhino import Rhino3dmImporter
 
 __all__ = [
-	"DxfImporter",
-	"Importer",
-	"ObjImporter",
-	"Rhino3dmImporter",
+    "DxfImporter",
+    "Importer",
+    "ObjImporter",
+    "Rhino3dmImporter",
 ]

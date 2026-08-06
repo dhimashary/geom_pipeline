@@ -1,11 +1,13 @@
 """SimulationProfile bundles all per-solver policy in one object."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+
 from geometry_pipeline.core.ir import Exporter, Geometry
 from geometry_pipeline.core.issues import IssueKind
-from geometry_pipeline.repairs.base import RepairStep
 from geometry_pipeline.core.tolerances import Tolerances
+from geometry_pipeline.repairs.base import RepairStep
 from geometry_pipeline.validators.base import Validator
 
 
@@ -25,6 +27,7 @@ class Stage:
     notify point: e.g. the raw stage exports the initial bundle but does not
     notify, while the inspect checkpoint does both.
     """
+
     name: str
     repairs: list[RepairStep] = field(default_factory=list)
     post_validators: list[Validator] = field(default_factory=list)
@@ -51,7 +54,9 @@ class SimulationProfile:
             accepts = getattr(component, "accepts", None)
             name = getattr(component, "name", type(component).__name__)
             if accepts is None or ir_kind not in accepts:
-                bad.append(f"{role} {name!r} accepts={accepts!r} but profile target_ir.kind={ir_kind!r}")
+                bad.append(
+                    f"{role} {name!r} accepts={accepts!r} but profile target_ir.kind={ir_kind!r}"
+                )
 
         for v in self.pre_validators:
             _check(v, "pre_validator")

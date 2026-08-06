@@ -3,6 +3,7 @@
 Concrete validators live under `mesh/` (they all operate on mesh geometry).
 Kind-agnostic infrastructure (`base`, `_common`) stays at this top level.
 """
+
 from geometry_pipeline.validators.mesh.boundary_edges import BoundaryEdgesValidator
 from geometry_pipeline.validators.mesh.degenerate_faces import ZeroAreaFaceValidator
 from geometry_pipeline.validators.mesh.duplicate_vertices import DuplicateVerticesValidator

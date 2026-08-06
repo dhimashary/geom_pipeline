@@ -1,4 +1,5 @@
 """Reporting value objects produced by the pipeline."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -10,6 +11,7 @@ from geometry_pipeline.core.issues import DetectionStage, Issue, IssueKind
 @dataclass
 class ValidationSnapshot:
     """Issues observed at one point in the pipeline."""
+
     when: DetectionStage
     stage_name: str = ""
     issues: list[Issue] = field(default_factory=list)

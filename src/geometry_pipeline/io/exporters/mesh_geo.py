@@ -1,18 +1,20 @@
 """Gmsh `.geo` exporter — writes a `Mesh` IR via the legacy export helper."""
+
 from __future__ import annotations
 
 import logging
 import os
 import tempfile
 from pathlib import Path
-from typing import List, Optional, Tuple, Dict
+from typing import Dict, List, Optional, Tuple
 
-from geometry_pipeline.core.ir import Mesh
-from geometry_pipeline.core.ir import Cavity
-from geometry_pipeline.geometry_math.geometry_math import uedge
 import rhino3dm
 
+from geometry_pipeline.core.ir import Cavity, Mesh
+from geometry_pipeline.geometry_math.geometry_math import uedge
+
 logger = logging.getLogger(__name__)
+
 
 class GmshGeoExporter:
     def __init__(
@@ -147,7 +149,9 @@ class GmshGeoExporter:
                 logger.warning("Failed to read 3DM model at %s: %s", three_dm_path, ex)
                 model = None
         else:
-            logger.info("3DM model not found at %s; continuing without material mapping", three_dm_path)
+            logger.info(
+                "3DM model not found at %s; continuing without material mapping", three_dm_path
+            )
 
         # Material mapping for later use
         material_to_id = {}
@@ -165,7 +169,9 @@ class GmshGeoExporter:
         for idx, face in enumerate(faces):
             physical_surfaces_dict.setdefault(getattr(face, "material", None), []).append(idx)
 
-        logger.info("Physical surfaces: %s", {mat: len(ids) for mat, ids in physical_surfaces_dict.items()})
+        logger.info(
+            "Physical surfaces: %s", {mat: len(ids) for mat, ids in physical_surfaces_dict.items()}
+        )
 
         # Write GEO to a temporary file then atomically replace the target.
         target_path = Path(geo_file)
@@ -174,7 +180,9 @@ class GmshGeoExporter:
         try:
             # Create a temp file in the same directory to ensure atomic replace works across filesystems
             tmp_dir = target_path.parent if target_path.parent.exists() else None
-            with tempfile.NamedTemporaryFile(mode="w", delete=False, dir=tmp_dir, prefix=target_path.stem + "_", suffix=".geo") as tf:
+            with tempfile.NamedTemporaryFile(
+                mode="w", delete=False, dir=tmp_dir, prefix=target_path.stem + "_", suffix=".geo"
+            ) as tf:
                 tmp_fd = tf.fileno()
                 tmp_path = Path(tf.name)
 
@@ -233,7 +241,9 @@ class GmshGeoExporter:
                     physical_volumes: list[tuple[str, int]] = []
 
                     if main_volume_surfaces:
-                        surf_list = ", ".join(str(signed_sid) for signed_sid in main_volume_surfaces.values())
+                        surf_list = ", ".join(
+                            str(signed_sid) for signed_sid in main_volume_surfaces.values()
+                        )
                         tf.write(f"Surface Loop(1) = {{ {surf_list} }};\n")
                         tf.write("Volume(1) = { 1 };\n")
                         physical_volumes.append((volume_name, 1))
@@ -254,7 +264,7 @@ class GmshGeoExporter:
                 # Physical Surfaces
                 ii = 1
                 for grp in material_to_id:
-                    tf.write(f'Physical Surface("{grp}") = {{ { str(ii) } }};\n')
+                    tf.write(f'Physical Surface("{grp}") = {{ {str(ii)} }};\n')
                     ii = ii + 1
 
                 # Physical Lines
@@ -262,10 +272,10 @@ class GmshGeoExporter:
                 tf.write(f'Physical Line("default") = {{ {lines_all} }};\n')
 
                 # Mesh options
-                tf.write('Mesh.Algorithm = 6;\n')
-                tf.write('Mesh.Algorithm3D = 1; // Delaunay3D\n')
-                tf.write('Mesh.Optimize = 1;\n')
-                tf.write('Mesh.CharacteristicLengthFromPoints = 1;\n')
+                tf.write("Mesh.Algorithm = 6;\n")
+                tf.write("Mesh.Algorithm3D = 1; // Delaunay3D\n")
+                tf.write("Mesh.Optimize = 1;\n")
+                tf.write("Mesh.CharacteristicLengthFromPoints = 1;\n")
 
                 tf.flush()
                 os.fsync(tmp_fd)
@@ -304,9 +314,9 @@ class GmshGeoExporter:
 
         try:
             return detect_cavities_native(faces, points)
-        except Exception as exc:
+        except Exception:
             return None
-        
+
     def _run_voxel_detection(self, faces, points) -> Optional[List[Cavity]]:
         try:
             # Imported lazily so trimesh/scipy are only required when
@@ -314,20 +324,19 @@ class GmshGeoExporter:
             from ...cavity_detection.cavity_detector import detect_cavities
 
             cavities = detect_cavities(
-                faces, points,
+                faces,
+                points,
                 pitch=self.cavity_pitch,
                 closing_iterations=self.cavity_closing_iterations,
             )
             if not cavities:
                 return None
             return cavities
-        except Exception as exc:
+        except Exception:
             return None
+
 
 # Backward compatibility: older callers import `GeoExporter` from this module.
 GeoExporter = GmshGeoExporter
 
 __all__ = ["GmshGeoExporter", "GeoExporter"]
-
-
-

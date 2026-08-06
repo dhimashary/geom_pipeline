@@ -1,18 +1,19 @@
 from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
 from pathlib import Path
-import logging
 from typing import Any, Callable, Optional
+
+from .core.context import Context
+from .core.issues import IssueKind
+from .core.tolerances import Tolerances
 
 # Internal imports — all private to the package; the facade is the public surface.
 from .io.registry import ImporterRegistry
-from .core.context import Context
-from .core.tolerances import Tolerances
-from .core.issues import IssueKind
 from .pipeline.runner import run_pipeline
 from .profiles.wave_based import wave_based_profile
 from .reporting.frontend_schema import kind_dict, snapshot_report
-
 
 SUPPORTED_INPUTS = (".obj", ".3dm", ".dxf")
 
@@ -79,7 +80,9 @@ def repair_geometry(
     try:
         geom = ImporterRegistry.for_extension(in_path.suffix).load(in_path)
         profile = wave_based_profile(detect_cavities=detect_cavities, volume_name=volume_name)
-        ctx = Context(tolerances=Tolerances(), logger=_log, profile_name=getattr(profile, "name", None))
+        ctx = Context(
+            tolerances=Tolerances(), logger=_log, profile_name=getattr(profile, "name", None)
+        )
         base = Path(output_dir) / in_path.stem
         result = run_pipeline(geom, profile, base, ctx)
     except Exception as exc:
@@ -126,11 +129,13 @@ def process_geometry(
         if on_checkpoint is None:
             return
         checkpoint_report = kind_dict(interim.composite_issues)
-        on_checkpoint({
-            "stage": stage_name,
-            "issue_report": checkpoint_report,
-            "issue_count": _count_issues(checkpoint_report),
-        })
+        on_checkpoint(
+            {
+                "stage": stage_name,
+                "issue_report": checkpoint_report,
+                "issue_count": _count_issues(checkpoint_report),
+            }
+        )
 
     try:
         geom = ImporterRegistry.for_extension(in_path.suffix).load(in_path)
@@ -175,6 +180,7 @@ _ISSUE_DESCRIPTIONS: dict[IssueKind, str] = {
 @dataclass(frozen=True)
 class IssueInfo:
     """Metadata about one kind of geometry issue this pipeline can detect."""
+
     kind: str
     description: str
     repairable: bool

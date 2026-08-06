@@ -1,4 +1,5 @@
 """Top-level orchestration: importer -> (convert) -> pre-validate -> stages -> final-validate -> export."""
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -29,7 +30,9 @@ def run_validators(
         if geom.kind not in v.accepts:
             ctx.logger.warning(
                 "[validators] skipping %s: accepts=%r but geom.kind=%r",
-                v.name, v.accepts, geom.kind,
+                v.name,
+                v.accepts,
+                geom.kind,
             )
             continue
         out = v.detect(geom, ctx)
@@ -37,12 +40,14 @@ def run_validators(
             if i.stage is when and i.stage_name == stage_name:
                 issues.append(i)
             else:
-                issues.append(Issue.create(
-                    kind=i.kind,
-                    stage=when,
-                    stage_name=stage_name,
-                    payload=i.payload,
-                ))
+                issues.append(
+                    Issue.create(
+                        kind=i.kind,
+                        stage=when,
+                        stage_name=stage_name,
+                        payload=i.payload,
+                    )
+                )
     return ValidationSnapshot(
         when=when,
         stage_name=stage_name,
@@ -62,16 +67,24 @@ def run_stage(
         if geom.kind not in repair.accepts:
             ctx.logger.warning(
                 "[stage %s] skipping repair %s: accepts=%r but geom.kind=%r",
-                stage.name, repair.name, repair.accepts, geom.kind,
+                stage.name,
+                repair.name,
+                repair.accepts,
+                geom.kind,
             )
             continue
-        relevant = [i for i in pre_issues if i.kind in repair.handles] if repair.handles else pre_issues
+        relevant = (
+            [i for i in pre_issues if i.kind in repair.handles] if repair.handles else pre_issues
+        )
         geom, result = repair.apply(geom, relevant, ctx, stage_name=stage.name)
         repair_report.results.append(result)
 
     snapshot = run_validators(
-        geom, stage.post_validators, ctx,
-        when=DetectionStage.POST_STAGE, stage_name=stage.name,
+        geom,
+        stage.post_validators,
+        ctx,
+        when=DetectionStage.POST_STAGE,
+        stage_name=stage.name,
     )
 
     if stage.fail_fast_on:
@@ -79,7 +92,8 @@ def run_stage(
         if offending:
             ctx.logger.error(
                 "[stage %s] fail_fast_on triggered (%d issues of kinds %s)",
-                stage.name, len(offending),
+                stage.name,
+                len(offending),
                 {i.kind.value for i in offending},
             )
             raise PipelineFailFastError(stage_name=stage.name, issues=offending)
@@ -89,7 +103,9 @@ def run_stage(
 
 class PipelineFailFastError(RuntimeError):
     def __init__(self, stage_name: str, issues: list) -> None:
-        super().__init__(f"Pipeline aborted at stage {stage_name!r}: {len(issues)} blocking issue(s)")
+        super().__init__(
+            f"Pipeline aborted at stage {stage_name!r}: {len(issues)} blocking issue(s)"
+        )
         self.stage_name = stage_name
         self.issues = issues
 
@@ -135,7 +151,9 @@ def run_checkpoint_exporters(
         try:
             cb(stage.name, interim)
         except Exception:
-            ctx.logger.exception("[pipeline] on_checkpoint callback failed for stage %s", stage.name)
+            ctx.logger.exception(
+                "[pipeline] on_checkpoint callback failed for stage %s", stage.name
+            )
 
 
 def run_pipeline(
@@ -158,12 +176,17 @@ def run_pipeline(
     repairs = RepairReport()
     logger.warning("Pipeline %r: starting PRE-validation", profile.name)
     pre = run_validators(
-        geom, profile.pre_validators, ctx,
-        when=DetectionStage.PRE, stage_name="",
+        geom,
+        profile.pre_validators,
+        ctx,
+        when=DetectionStage.PRE,
+        stage_name="",
     )
     snapshots.append(pre)
     accumulated_issues = list(pre.issues)
-    logger.warning("Pipeline %r: completed PRE-validation with %d issue(s)", profile.name, len(pre.issues))
+    logger.warning(
+        "Pipeline %r: completed PRE-validation with %d issue(s)", profile.name, len(pre.issues)
+    )
 
     # Ensure the output directory exists before any (possibly mid-pipeline)
     # checkpoint export writes to it.
@@ -179,11 +202,16 @@ def run_pipeline(
 
     logger.warning("Pipeline %r: completed all stages, starting FINAL validation", profile.name)
     final = run_validators(
-        geom, profile.final_validators, ctx,
-        when=DetectionStage.FINAL, stage_name="",
+        geom,
+        profile.final_validators,
+        ctx,
+        when=DetectionStage.FINAL,
+        stage_name="",
     )
     snapshots.append(final)
-    logger.warning("Pipeline %r: completed FINAL validation with %d issue(s)", profile.name, len(final.issues))
+    logger.warning(
+        "Pipeline %r: completed FINAL validation with %d issue(s)", profile.name, len(final.issues)
+    )
 
     logger.warning("Pipeline %r: starting export to %s", profile.name, output_path)
 
@@ -206,7 +234,8 @@ def run_pipeline(
         exporter.write(geom, target)
         ctx.logger.info(
             "[pipeline] wrote %s at %s",
-            target, datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            target,
+            datetime.now(timezone.utc).isoformat(timespec="seconds"),
         )
     logger.warning("Pipeline %r: completed export to %s", profile.name, output_path)
     return pipeline_result

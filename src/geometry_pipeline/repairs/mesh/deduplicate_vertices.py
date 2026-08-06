@@ -6,6 +6,7 @@ the importer already produces a `Mesh`; this repair re-runs the same merge
 on Mesh vertices so it can also be invoked mid-pipeline if a later step
 introduces near-duplicates.
 """
+
 from __future__ import annotations
 
 from typing import ClassVar
@@ -14,8 +15,9 @@ from geometry_pipeline.core.context import Context
 from geometry_pipeline.core.ir import Face, Mesh, Vertex
 from geometry_pipeline.core.issues import Issue, IssueKind
 from geometry_pipeline.core.report import RepairResult
-from geometry_pipeline.repairs.base import BaseRepair
 from geometry_pipeline.io.importers.obj import deduplicate_vertices
+from geometry_pipeline.repairs.base import BaseRepair
+
 
 class DeduplicateVerticesRepair(BaseRepair):
     name: ClassVar[str] = "deduplicate_vertices"
@@ -63,14 +65,9 @@ class DeduplicateVerticesRepair(BaseRepair):
         cleaned_duplicate_face_ids: list[int] = []
 
         for face_idx, face in enumerate(geom.faces):
-            remapped_indices = [
-                orig_to_unique[vid]
-                for vid in face.vertex_indices
-            ]
+            remapped_indices = [orig_to_unique[vid] for vid in face.vertex_indices]
 
-            cleaned_indices = self._remove_consecutive_duplicate_indices(
-                remapped_indices
-            )
+            cleaned_indices = self._remove_consecutive_duplicate_indices(remapped_indices)
 
             if cleaned_indices != remapped_indices:
                 cleaned_duplicate_face_ids.append(face_idx)
@@ -88,10 +85,7 @@ class DeduplicateVerticesRepair(BaseRepair):
             )
 
         new_mesh = Mesh(
-            vertices=[
-                Vertex(p[0], p[1], p[2])
-                for p in unique_points
-            ],
+            vertices=[Vertex(p[0], p[1], p[2]) for p in unique_points],
             faces=new_faces,
             materials=dict(geom.materials),
             metadata=dict(geom.metadata),

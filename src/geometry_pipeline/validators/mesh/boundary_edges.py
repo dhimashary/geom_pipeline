@@ -1,15 +1,14 @@
 """Validator: detects open boundary edges (edges adjacent to one face only)."""
+
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Dict, List, Tuple
-from typing import ClassVar
+from typing import Any, ClassVar, Dict, List, Tuple
 
 from geometry_pipeline.core.context import Context
-from geometry_pipeline.core.ir import Mesh
+from geometry_pipeline.core.ir import Face, Mesh
 from geometry_pipeline.core.issues import IssueKind
 from geometry_pipeline.geometry_math.geometry_math import uedge
-from geometry_pipeline.core.ir import Face
 from geometry_pipeline.validators.base import BaseValidator
 
 
@@ -36,12 +35,17 @@ def detect_boundary_edges(
             a, b = edge
             coord_a = unique_vertices[a - 1]
             coord_b = unique_vertices[b - 1]
-            boundary_edges.append({
-                "elements": {
-                    "type": "edge",
-                    "points": [[coord_a[0], coord_a[1], coord_a[2]], [coord_b[0], coord_b[1], coord_b[2]]],
-                },
-            })
+            boundary_edges.append(
+                {
+                    "elements": {
+                        "type": "edge",
+                        "points": [
+                            [coord_a[0], coord_a[1], coord_a[2]],
+                            [coord_b[0], coord_b[1], coord_b[2]],
+                        ],
+                    },
+                }
+            )
 
     return boundary_edges
 

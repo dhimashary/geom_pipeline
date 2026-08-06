@@ -10,6 +10,7 @@ The pure-Python voxel detector (:mod:`cavity_detector`) is also exercised on a
 watertight unit cube; it is skipped when its optional native deps (trimesh /
 scipy) are unavailable.
 """
+
 from __future__ import annotations
 
 import json
@@ -28,22 +29,29 @@ from geometry_pipeline.cavity_detection.native_bridge import (
 )
 from geometry_pipeline.core.ir import Cavity, Face
 
-
 # --- helpers -----------------------------------------------------------------
+
 
 def _face(*vertex_indices: int) -> Face:
     """A minimal FaceRecord-like face with 1-based vertex indices."""
     return Face(vertex_indices=list(vertex_indices), group="default", material=None)
 
 
-def _fake_run_factory(payload: dict | None, *, returncode: int = 0,
-                      stdout: str = "", stderr: str = "", write_output: bool = True):
+def _fake_run_factory(
+    payload: dict | None,
+    *,
+    returncode: int = 0,
+    stdout: str = "",
+    stderr: str = "",
+    write_output: bool = True,
+):
     """Build a ``subprocess.run`` stand-in that simulates the native tool.
 
     The real detector receives ``[binary, mesh_path, json_path]`` and writes its
     result to ``json_path``. The fake mirrors that contract so the bridge can
     read the output back.
     """
+
     def _fake_run(cmd, **kwargs):
         if write_output and payload is not None:
             json_out = Path(cmd[2])
@@ -55,6 +63,7 @@ def _fake_run_factory(payload: dict | None, *, returncode: int = 0,
 
 # --- _write_mesh_json --------------------------------------------------------
 
+
 def test_write_mesh_json_serialises_zero_based_faces(tmp_path):
     faces = [_face(1, 2, 3), _face(3, 4, 1)]
     vertices = [(0.0, 0.0, 0.0), (1, 0, 0), (1, 1, 0), (0, 1, 0)]
@@ -64,19 +73,27 @@ def test_write_mesh_json_serialises_zero_based_faces(tmp_path):
     payload = json.loads(out.read_text())
 
     # Vertices are coerced to float triples.
-    assert payload["vertices"] == [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0],
-                                   [1.0, 1.0, 0.0], [0.0, 1.0, 0.0]]
+    assert payload["vertices"] == [
+        [0.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0],
+        [1.0, 1.0, 0.0],
+        [0.0, 1.0, 0.0],
+    ]
     # 1-based IR indices become 0-based for the C++ tool; face order preserved.
     assert payload["faces"] == [[0, 1, 2], [2, 3, 0]]
 
 
 # --- _cavities_from_json -----------------------------------------------------
 
+
 def test_cavities_from_json_maps_ids_signs_and_names():
     payload = {
         "volumes": [
-            {"volume_id": 0, "is_manifold": True,
-             "faces": [{"face_id": 0, "sign": 1}, {"face_id": 1, "sign": -1}]},
+            {
+                "volume_id": 0,
+                "is_manifold": True,
+                "faces": [{"face_id": 0, "sign": 1}, {"face_id": 1, "sign": -1}],
+            },
             {"volume_id": 2, "faces": [{"face_id": 5}]},  # sign + manifold default
         ]
     }
@@ -107,11 +124,11 @@ def test_cavities_from_json_empty_payload():
 
 # --- native_detector_path / availability -------------------------------------
 
+
 def test_native_detector_path_none_when_absent(monkeypatch):
     monkeypatch.delenv("VOLUME_DETECTOR_BIN", raising=False)
     # Point the default location at somewhere guaranteed not to exist.
-    monkeypatch.setattr(native_bridge, "_DEFAULT_BINARY",
-                        Path("/nonexistent/volume_detector"))
+    monkeypatch.setattr(native_bridge, "_DEFAULT_BINARY", Path("/nonexistent/volume_detector"))
     assert native_detector_path() is None
     assert is_native_detector_available() is False
 
@@ -127,12 +144,12 @@ def test_native_detector_path_uses_env_override(tmp_path, monkeypatch):
 
 def test_native_detector_path_ignores_missing_override(tmp_path, monkeypatch):
     monkeypatch.setenv("VOLUME_DETECTOR_BIN", str(tmp_path / "does_not_exist"))
-    monkeypatch.setattr(native_bridge, "_DEFAULT_BINARY",
-                        Path("/nonexistent/volume_detector"))
+    monkeypatch.setattr(native_bridge, "_DEFAULT_BINARY", Path("/nonexistent/volume_detector"))
     assert native_detector_path() is None
 
 
 # --- detect_cavities_native (mocked binary + subprocess) ---------------------
+
 
 def test_detect_cavities_native_happy_path(monkeypatch, tmp_path):
     binary = tmp_path / "volume_detector"
@@ -141,15 +158,18 @@ def test_detect_cavities_native_happy_path(monkeypatch, tmp_path):
 
     payload = {
         "volumes": [
-            {"volume_id": 0, "is_manifold": True,
-             "faces": [{"face_id": 0, "sign": 1}, {"face_id": 1, "sign": -1}]},
+            {
+                "volume_id": 0,
+                "is_manifold": True,
+                "faces": [{"face_id": 0, "sign": 1}, {"face_id": 1, "sign": -1}],
+            },
         ]
     }
-    monkeypatch.setattr(native_bridge.subprocess, "run",
-                        _fake_run_factory(payload, stdout="done"))
+    monkeypatch.setattr(native_bridge.subprocess, "run", _fake_run_factory(payload, stdout="done"))
 
-    cavities = detect_cavities_native([_face(1, 2, 3), _face(3, 2, 4)],
-                                      [(0, 0, 0), (1, 0, 0), (0, 1, 0), (1, 1, 0)])
+    cavities = detect_cavities_native(
+        [_face(1, 2, 3), _face(3, 2, 4)], [(0, 0, 0), (1, 0, 0), (0, 1, 0), (1, 1, 0)]
+    )
 
     assert len(cavities) == 1
     assert isinstance(cavities[0], Cavity)
@@ -168,7 +188,8 @@ def test_detect_cavities_native_raises_on_nonzero_exit(monkeypatch, tmp_path):
     binary.write_text("#!/bin/sh\n")
     monkeypatch.setattr(native_bridge, "native_detector_path", lambda: binary)
     monkeypatch.setattr(
-        native_bridge.subprocess, "run",
+        native_bridge.subprocess,
+        "run",
         _fake_run_factory(None, returncode=3, stderr="boom", write_output=False),
     )
 
@@ -181,8 +202,9 @@ def test_detect_cavities_native_raises_when_no_output(monkeypatch, tmp_path):
     binary.write_text("#!/bin/sh\n")
     monkeypatch.setattr(native_bridge, "native_detector_path", lambda: binary)
     # Exit 0 but the tool never wrote the JSON output file.
-    monkeypatch.setattr(native_bridge.subprocess, "run",
-                        _fake_run_factory(None, write_output=False))
+    monkeypatch.setattr(
+        native_bridge.subprocess, "run", _fake_run_factory(None, write_output=False)
+    )
 
     with pytest.raises(RuntimeError, match="no JSON output"):
         detect_cavities_native([_face(1, 2, 3)], [(0, 0, 0), (1, 0, 0), (0, 1, 0)])
@@ -223,15 +245,13 @@ def test_detect_cavities_native_returns_empty_for_no_volumes(monkeypatch, tmp_pa
     binary = tmp_path / "volume_detector"
     binary.write_text("#!/bin/sh\n")
     monkeypatch.setattr(native_bridge, "native_detector_path", lambda: binary)
-    monkeypatch.setattr(native_bridge.subprocess, "run",
-                        _fake_run_factory({"volumes": []}))
+    monkeypatch.setattr(native_bridge.subprocess, "run", _fake_run_factory({"volumes": []}))
 
-    assert detect_cavities_native(
-        [_face(1, 2, 3)], [(0, 0, 0), (1, 0, 0), (0, 1, 0)]
-    ) == []
+    assert detect_cavities_native([_face(1, 2, 3)], [(0, 0, 0), (1, 0, 0), (0, 1, 0)]) == []
 
 
 # --- voxel detector (real trimesh/scipy; skipped if unavailable) -------------
+
 
 def test_voxel_detect_cavities_on_unit_cube(unit_cube):
     pytest.importorskip("trimesh")

@@ -7,25 +7,26 @@ The stage order encodes geometric dependencies:
   3. fix intersections (PLC violations).
   4. detect remaining holes / boundary edges only at the end.
 """
+
 from __future__ import annotations
 
-from geometry_pipeline.io.exporters.mesh_geo import GmshGeoExporter
-from geometry_pipeline.io.registry import ExporterRegistry
-from geometry_pipeline.reporting.json_writer import JsonReportWriter
 from geometry_pipeline.core.ir import Mesh
 from geometry_pipeline.core.profile import SimulationProfile, Stage
+from geometry_pipeline.core.tolerances import Tolerances
+from geometry_pipeline.io.exporters.mesh_geo import GmshGeoExporter
+from geometry_pipeline.io.registry import ExporterRegistry
 from geometry_pipeline.repairs.mesh.deduplicate_vertices import DeduplicateVerticesRepair
 from geometry_pipeline.repairs.mesh.fix_t_junctions import FixTJunctionsIterativeRepair
 from geometry_pipeline.repairs.mesh.orient_outward import FlipFacesIfMajorityInwardRepair
 from geometry_pipeline.repairs.mesh.remove_degenerate_faces import RemoveZeroAreaFaceRepair
 from geometry_pipeline.repairs.mesh.repair_intersections import (
-    RepairPlcByOffsetRepair,
     RepairPlcSingleSplitsRepair,
     TrimSegmentFaceIntersectionsRepair,
 )
 from geometry_pipeline.repairs.mesh.sort_vertices import SortVerticesDeterministicallyRepair
-from geometry_pipeline.core.tolerances import Tolerances
+from geometry_pipeline.reporting.json_writer import JsonReportWriter
 from geometry_pipeline.validators.mesh.boundary_edges import BoundaryEdgesValidator
+from geometry_pipeline.validators.mesh.collinear_faces import CollinearFacesValidator
 from geometry_pipeline.validators.mesh.degenerate_faces import ZeroAreaFaceValidator
 from geometry_pipeline.validators.mesh.duplicate_vertices import DuplicateVerticesValidator
 from geometry_pipeline.validators.mesh.intersections import IntersectionsValidator
@@ -33,7 +34,6 @@ from geometry_pipeline.validators.mesh.non_planar_faces import NonPlanarFacesVal
 from geometry_pipeline.validators.mesh.overlapping_faces import OverlappingFacesValidator
 from geometry_pipeline.validators.mesh.possible_holes import PossibleHolesValidator
 from geometry_pipeline.validators.mesh.small_faces import SmallFacesValidator
-from geometry_pipeline.validators.mesh.collinear_faces import CollinearFacesValidator
 from geometry_pipeline.validators.mesh.t_junctions import TJunctionsValidator
 
 

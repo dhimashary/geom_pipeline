@@ -1,4 +1,5 @@
 """Face classification helpers (degeneracy, planarity)."""
+
 from __future__ import annotations
 
 import math

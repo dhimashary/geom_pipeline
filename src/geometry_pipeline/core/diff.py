@@ -1,4 +1,5 @@
 """Snapshot diffing — compare two validation snapshots by Issue.id."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

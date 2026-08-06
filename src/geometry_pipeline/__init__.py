@@ -5,13 +5,13 @@ is an implementation detail and may change without notice.
 """
 
 from .api import (
-    repair_geometry,
-    process_geometry,
-    list_issue_kinds,
+    SUPPORTED_INPUTS,
+    GeometryError,
     GeometryResult,
     IssueInfo,
-    GeometryError,
-    SUPPORTED_INPUTS,
+    list_issue_kinds,
+    process_geometry,
+    repair_geometry,
 )
 
 __all__ = [

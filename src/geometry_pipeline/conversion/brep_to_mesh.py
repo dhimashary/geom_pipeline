@@ -1,4 +1,5 @@
 """Tessellate a BRep into a Mesh."""
+
 from __future__ import annotations
 
 from geometry_pipeline.core.ir import BRep, Mesh

@@ -4,18 +4,19 @@ The OBJ -> 3DM conversion (constrained Delaunay triangulation + rhino3dm
 mesh writing) is implemented directly in this module so the geometry package
 has no outbound dependency on `app.factory`.
 """
+
 from __future__ import annotations
 
-from pathlib import Path
 import logging
 import os
 import tempfile
 import zipfile
+from pathlib import Path
 
 import numpy as np
 import rhino3dm
-from shapely.geometry import Polygon
 from shapely import constrained_delaunay_triangles
+from shapely.geometry import Polygon
 
 from geometry_pipeline.core.ir import Mesh
 from geometry_pipeline.io.exporters.mesh_obj import MeshObjExporter
@@ -74,7 +75,9 @@ class MeshThreeDMExporter:
         try:
             # Generate 3DM into a temp file then atomically replace the final path
             tmp_dir = rhino_path.parent if rhino_path.parent.exists() else None
-            with tempfile.NamedTemporaryFile(delete=False, dir=tmp_dir, prefix=rhino_path.stem + "_", suffix=".3dm") as tf:
+            with tempfile.NamedTemporaryFile(
+                delete=False, dir=tmp_dir, prefix=rhino_path.stem + "_", suffix=".3dm"
+            ) as tf:
                 tmp_rhino_path = Path(tf.name)
 
             # Let the generator write into the temp path
@@ -87,17 +90,17 @@ class MeshThreeDMExporter:
             self.logger.error("Failed to convert OBJ to 3DM: %s", ex)
             # Clean up temp if exists
             try:
-                if 'tmp_rhino_path' in locals() and tmp_rhino_path.exists():
+                if "tmp_rhino_path" in locals() and tmp_rhino_path.exists():
                     tmp_rhino_path.unlink()
             except Exception:
                 pass
             raise RuntimeError("Failed to convert OBJ to 3DM") from ex
 
-        #replacethe old zip file with a new one containing the new 3dm file
+        # replacethe old zip file with a new one containing the new 3dm file
         zip_file_path = base_path.with_name(out_stem + ".zip")
         self.logger.warning(f"Creating ZIP archive at {zip_file_path} containing {rhino_path.name}")
         with zipfile.ZipFile(zip_file_path, "w") as zipf:
-                zipf.write(rhino_path, arcname=rhino_path.name) 
+            zipf.write(rhino_path, arcname=rhino_path.name)
 
         self.logger.warning(f"Converted {obj_path} to {rhino_path} using ObjConversion")
 
@@ -143,11 +146,13 @@ class MeshThreeDMExporter:
         vertices, faces = self._parse_obj(obj_clean_path)
 
         model = rhino3dm.File3dm()
-        rotation_matrix = np.array([
-            [1, 0, 0],
-            [0, 0, -1],
-            [0, 1, 0],
-        ])
+        rotation_matrix = np.array(
+            [
+                [1, 0, 0],
+                [0, 0, -1],
+                [0, 1, 0],
+            ]
+        )
 
         for face_index, face_data in enumerate(faces):
             face_indices = face_data["indices"]
@@ -210,11 +215,15 @@ class MeshThreeDMExporter:
 
                 if line.startswith("v "):
                     parts = line.split()
-                    vertices.append(np.array([
-                        float(parts[1]),
-                        float(parts[2]),
-                        float(parts[3]),
-                    ]))
+                    vertices.append(
+                        np.array(
+                            [
+                                float(parts[1]),
+                                float(parts[2]),
+                                float(parts[3]),
+                            ]
+                        )
+                    )
 
                 elif line.startswith("usemtl "):
                     current_material = line.split(maxsplit=1)[1]
@@ -238,10 +247,12 @@ class MeshThreeDMExporter:
 
                         indices.append(vertex_index)
 
-                    faces.append({
-                        "indices": indices,
-                        "material": current_material,
-                    })
+                    faces.append(
+                        {
+                            "indices": indices,
+                            "material": current_material,
+                        }
+                    )
 
         return vertices, faces
 
@@ -277,7 +288,9 @@ class MeshThreeDMExporter:
             polygon = polygon.buffer(0)
 
         if polygon.is_empty:
-            self.logger.warning("CDT failed because polygon is empty. Falling back to fan triangulation.")
+            self.logger.warning(
+                "CDT failed because polygon is empty. Falling back to fan triangulation."
+            )
             return self._fan_triangulate(original_indices)
 
         result = constrained_delaunay_triangles(polygon)
@@ -342,10 +355,12 @@ class MeshThreeDMExporter:
         triangles = []
 
         for i in range(1, len(indices) - 1):
-            triangles.append([
-                indices[0],
-                indices[i],
-                indices[i + 1],
-            ])
+            triangles.append(
+                [
+                    indices[0],
+                    indices[i],
+                    indices[i + 1],
+                ]
+            )
 
         return triangles

@@ -7,15 +7,15 @@ comes from `Tolerances.small_face_max_dim` (0.10 m).
 
 NOTE: not wired into `wave_based_profile` yet — see tech-debt #11.
 """
+
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
-from typing import ClassVar
+from typing import Any, ClassVar, Dict, List, Tuple
 
 from geometry_pipeline.core.context import Context
-from geometry_pipeline.geometry_math.geometry_math import polygon_area_3d
-from geometry_pipeline.core.ir import Mesh, Face
+from geometry_pipeline.core.ir import Face, Mesh
 from geometry_pipeline.core.issues import IssueKind
+from geometry_pipeline.geometry_math.geometry_math import polygon_area_3d
 from geometry_pipeline.validators.base import BaseValidator
 
 
@@ -31,12 +31,14 @@ def detect_faces_with_area_below_threshold(
         vids = list(getattr(f, "vertex_indices", []))
         area = polygon_area_3d(vids, vertices)
         if area < area_threshold_m2:
-            small_faces.append({
-                "fid": getattr(f, "fid", fid),
-                "verts": vids[:],
-                "area_m2": area,
-                "threshold_m2": area_threshold_m2,
-            })
+            small_faces.append(
+                {
+                    "fid": getattr(f, "fid", fid),
+                    "verts": vids[:],
+                    "area_m2": area,
+                    "threshold_m2": area_threshold_m2,
+                }
+            )
 
     return small_faces
 
@@ -61,15 +63,17 @@ class SmallFacesValidator(BaseValidator):
             zs = [p[2] for p in pts]
             max_dim = max(max(xs) - min(xs), max(ys) - min(ys), max(zs) - min(zs))
             if max_dim < threshold:
-                raw.append({
-                    "fid": getattr(f, "fid", fid),
-                    "max_dim": max_dim,
-                    "threshold": threshold,
-                    "elements": {
-                        "type": "face",
-                        "points": pts,
-                    },
-                })
+                raw.append(
+                    {
+                        "fid": getattr(f, "fid", fid),
+                        "max_dim": max_dim,
+                        "threshold": threshold,
+                        "elements": {
+                            "type": "face",
+                            "points": pts,
+                        },
+                    }
+                )
 
         return raw
 

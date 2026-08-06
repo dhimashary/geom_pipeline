@@ -12,21 +12,20 @@ The outer loop is kept in case a future detector reports a single batch
 that the inner repair only partially fixes — today's detector is global
 so a single inner call is sufficient.
 """
+
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Optional
-from typing import ClassVar
+from typing import Any, ClassVar, Optional
 
 from geometry_pipeline.core.context import Context
-from geometry_pipeline.geometry_math.geometry_math import uedge
 from geometry_pipeline.core.ir import Mesh
 from geometry_pipeline.core.issues import Issue, IssueKind
-from geometry_pipeline.validators.mesh.t_junctions import detect_t_junctions_mesh_global_plc
 from geometry_pipeline.core.report import RepairResult
+from geometry_pipeline.geometry_math.geometry_math import uedge
 from geometry_pipeline.repairs.base import BaseRepair
 from geometry_pipeline.validators.base import Validator
-from geometry_pipeline.core.ir import Face
+from geometry_pipeline.validators.mesh.t_junctions import detect_t_junctions_mesh_global_plc
 
 
 def _insert_vertex_on_edge_in_poly(poly, u, v, w):
@@ -105,7 +104,7 @@ def fix_t_junctions_by_edge_splitting_mesh(
             poly = list(face.vertex_indices)
             items_sorted = sorted(items, key=lambda x: x[3])
 
-            for (u, v, w, _t) in items_sorted:
+            for u, v, w, _t in items_sorted:
                 new_poly, did = _insert_vertex_on_edge_in_poly(poly, u, v, w)
                 if did:
                     poly = new_poly

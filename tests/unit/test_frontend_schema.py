@@ -1,4 +1,5 @@
 """Tests for the generic frontend report translator (tech-debt #10)."""
+
 from __future__ import annotations
 
 from geometry_pipeline.core.issues import (
@@ -25,7 +26,9 @@ def test_every_issue_kind_is_mapped_so_none_is_silently_dropped():
 
 
 def test_kind_dict_is_generic_and_routes_each_kind_to_its_key():
-    issues = [_issue(k, {"elements": [{"type": "vertex", "points": [[0, 0, 0]]}]}) for k in IssueKind]
+    issues = [
+        _issue(k, {"elements": [{"type": "vertex", "points": [[0, 0, 0]]}]}) for k in IssueKind
+    ]
     report = kind_dict(issues)
 
     for k in IssueKind:
@@ -39,7 +42,6 @@ def test_summary_issues_are_excluded():
     # frontend shape.
     report = kind_dict([_issue(IssueKind.T_JUNCTION, {"summary": True})])
     assert report["t_junction"] == []
-
 
 
 def test_t_junction_validator_builds_elements_in_payload():

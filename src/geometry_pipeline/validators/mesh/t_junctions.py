@@ -1,9 +1,9 @@
 """Validator: detects PLC-level T-junctions (vertex on another face's edge)."""
+
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Dict, List
-from typing import ClassVar
+from typing import Any, ClassVar, Dict, List
 
 from geometry_pipeline.core.context import Context
 from geometry_pipeline.core.ir import Mesh
@@ -56,7 +56,7 @@ def detect_t_junctions_mesh_global_plc(
     all_verts = list(range(1, len(points) + 1))
 
     reports = []
-    for (u, v) in edge_set:
+    for u, v in edge_set:
         A = points[u - 1]
         B = points[v - 1]
         face_idxs_using_edge = edge_to_face_idxs[uedge(u, v)]
@@ -83,19 +83,23 @@ def detect_t_junctions_mesh_global_plc(
                 continue
 
             edge_face_fids = [getattr(mesh.faces[fi], "fid", fi) for fi in face_idxs_using_edge]
-            v_face_fids = [getattr(mesh.faces[fi], "fid", fi) for fi in vert_to_face_idxs.get(w, [])]
+            v_face_fids = [
+                getattr(mesh.faces[fi], "fid", fi) for fi in vert_to_face_idxs.get(w, [])
+            ]
 
             if len(v_face_fids) > 0:
-                reports.append({
-                    "edge": (u, v),
-                    "edge_coordinates": [[A[0], A[1], A[2]], [B[0], B[1], B[2]]],
-                    "split_vertex": w,
-                    "split_vertex_coordinates": [P[0], P[1], P[2]],
-                    "t_param": t,
-                    "edge_face_fids": edge_face_fids,
-                    "culprit_face_fid": culprit_fid,
-                    "v_face_fids": v_face_fids,
-                })
+                reports.append(
+                    {
+                        "edge": (u, v),
+                        "edge_coordinates": [[A[0], A[1], A[2]], [B[0], B[1], B[2]]],
+                        "split_vertex": w,
+                        "split_vertex_coordinates": [P[0], P[1], P[2]],
+                        "t_param": t,
+                        "edge_face_fids": edge_face_fids,
+                        "culprit_face_fid": culprit_fid,
+                        "v_face_fids": v_face_fids,
+                    }
+                )
 
             if len(reports) >= max_reports:
                 return reports
@@ -120,7 +124,7 @@ class TJunctionsValidator(BaseValidator):
         # stays generic (no per-kind branches in reporting/frontend_schema).
         p = dict(payload)
         p["elements"] = [
-            {"type": "edge",   "points": p.get("edge_coordinates", [])},
+            {"type": "edge", "points": p.get("edge_coordinates", [])},
             {"type": "vertex", "points": p.get("split_vertex_coordinates", [])},
         ]
         return p

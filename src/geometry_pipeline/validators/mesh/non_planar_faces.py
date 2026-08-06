@@ -1,13 +1,16 @@
 """Validator: detects faces whose vertices deviate from a best-fit plane."""
+
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
-from typing import ClassVar
+from typing import Any, ClassVar, Dict, List, Tuple
 
 from geometry_pipeline.core.context import Context
-from geometry_pipeline.core.ir import Mesh, Face
+from geometry_pipeline.core.ir import Face, Mesh
 from geometry_pipeline.core.issues import IssueKind
-from geometry_pipeline.geometry_math.predicates import classify_face_degeneracy, classify_face_planarity_m
+from geometry_pipeline.geometry_math.predicates import (
+    classify_face_degeneracy,
+    classify_face_planarity_m,
+)
 from geometry_pipeline.validators.base import BaseValidator
 
 
@@ -34,16 +37,18 @@ def inspect_face_planarity_issues(
 
         if status in ("warning", "fatal"):
             coordinates = [unique_vertices[vid - 1] for vid in face.vertex_indices]
-            problematic_faces.append({
-                "elements": {
-                    "type": "face",
-                    "points": [[coord[0], coord[1], coord[2]] for coord in coordinates],
-                },
-                "details": {
-                    "worst_vertex_deviation": max_dist_m,
-                    "overall_spread_deviation": rms_dist_m,
-                },
-            })
+            problematic_faces.append(
+                {
+                    "elements": {
+                        "type": "face",
+                        "points": [[coord[0], coord[1], coord[2]] for coord in coordinates],
+                    },
+                    "details": {
+                        "worst_vertex_deviation": max_dist_m,
+                        "overall_spread_deviation": rms_dist_m,
+                    },
+                }
+            )
 
     return problematic_faces
 
@@ -72,16 +77,18 @@ def inspect_face_planarity_issues_mesh(
 
         if status in ("warning", "fatal"):
             coordinates = [points[vid - 1] for vid in vids]
-            problematic_faces.append({
-                "elements": {
-                    "type": "face",
-                    "points": [[coord[0], coord[1], coord[2]] for coord in coordinates],
-                },
-                "details": {
-                    "worst_vertex_deviation": max_dist_m,
-                    "overall_spread_deviation": rms_dist_m,
-                },
-            })
+            problematic_faces.append(
+                {
+                    "elements": {
+                        "type": "face",
+                        "points": [[coord[0], coord[1], coord[2]] for coord in coordinates],
+                    },
+                    "details": {
+                        "worst_vertex_deviation": max_dist_m,
+                        "overall_spread_deviation": rms_dist_m,
+                    },
+                }
+            )
 
     return problematic_faces
 

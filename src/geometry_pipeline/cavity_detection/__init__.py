@@ -5,6 +5,7 @@ Houses detector implementations plus native C++ sources under `_native/`
 its historical ``volume_detector`` name for the build/Docker contract; the
 Python API standardizes on the ``cavity`` term.
 """
+
 from __future__ import annotations
 
 from geometry_pipeline.cavity_detection.cavity_detector import detect_cavities

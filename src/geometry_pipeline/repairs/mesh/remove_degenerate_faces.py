@@ -1,14 +1,15 @@
 """Drop faces classified as fatally zero-area (effectively zero area)."""
+
 from __future__ import annotations
 
 import logging
 from typing import ClassVar
 
 from geometry_pipeline.core.context import Context
-from geometry_pipeline.geometry_math.predicates import classify_face_degeneracy
-from geometry_pipeline.core.ir import Mesh, Face
+from geometry_pipeline.core.ir import Face, Mesh
 from geometry_pipeline.core.issues import Issue, IssueKind
 from geometry_pipeline.core.report import RepairResult
+from geometry_pipeline.geometry_math.predicates import classify_face_degeneracy
 from geometry_pipeline.repairs.base import BaseRepair
 
 
@@ -37,7 +38,13 @@ def remove_zero_area_faces_mesh(
             fatal_removed += 1
             continue
 
-        kept_faces.append(Face(vertex_indices=list(vids), group=getattr(face, "group", "default") or "default", material=getattr(face, "material", None)))
+        kept_faces.append(
+            Face(
+                vertex_indices=list(vids),
+                group=getattr(face, "group", "default") or "default",
+                material=getattr(face, "material", None),
+            )
+        )
 
     new_mesh = Mesh(
         vertices=list(mesh.vertices),

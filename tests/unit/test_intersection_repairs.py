@@ -6,13 +6,16 @@ tested directly with small hand-built inputs. The two public repair steps are
 then driven over a synthetic self-intersecting mesh so the iterative loops
 execute end to end.
 """
+
 from __future__ import annotations
 
 import math
 
 import pytest
 
+from conftest import make_mesh
 from geometry_pipeline.core.ir import Face, Mesh, Vertex
+from geometry_pipeline.repairs.mesh._common import _endpoint_vids_from_edge_t
 from geometry_pipeline.repairs.mesh._intersection_repairs import (
     _boundary_chain,
     _build_edge_face_adjacency,
@@ -35,14 +38,11 @@ from geometry_pipeline.repairs.mesh._intersection_repairs import (
     repair_plc_by_offset_iterative,
     repair_plc_single_splits_iterative,
 )
-from geometry_pipeline.repairs.mesh._common import _endpoint_vids_from_edge_t
 from geometry_pipeline.repairs.mesh.repair_intersections import (
     RepairPlcSingleSplitsRepair,
     TrimSegmentFaceIntersectionsRepair,
 )
 from geometry_pipeline.validators.mesh.intersections import IntersectionsValidator
-
-from conftest import make_mesh
 
 # A unit square face in the z=0 plane, vertex ids 1..4.
 SQUARE_PTS = [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (1.0, 1.0, 0.0), (0.0, 1.0, 0.0)]
@@ -54,6 +54,7 @@ def _face(vids):
 
 
 # --- Face accessors ----------------------------------------------------------
+
 
 def test_face_vids_returns_copy():
     f = _face([1, 2, 3])
@@ -84,6 +85,7 @@ def test_face_fid_falls_back_to_index():
 
 # --- Plane helpers -----------------------------------------------------------
 
+
 def test_plane_from_square_face():
     plane_point, normal = _plane_from_face(_face(SQUARE_IDS), SQUARE_PTS)
     assert plane_point == (0.0, 0.0, 0.0)
@@ -105,6 +107,7 @@ def test_signed_distance_to_plane():
 
 # --- Plane clipping ----------------------------------------------------------
 
+
 def test_clip_square_against_plane_keeps_correct_half():
     points = list(SQUARE_PTS)  # helper appends intersection vertices
     loop = _clip_face_loop_against_plane(
@@ -125,6 +128,7 @@ def test_clip_degenerate_loop_returns_empty():
 
 # --- Adjacency / components --------------------------------------------------
 
+
 def test_build_edge_face_adjacency_shared_edge():
     faces = [_face([1, 2, 3]), _face([2, 3, 4])]  # share edge (2,3)
     adj = _build_edge_face_adjacency(faces)
@@ -143,6 +147,7 @@ def test_collect_component_spans_shared_edges_only():
 
 # --- Boundary chain / visibility --------------------------------------------
 
+
 def test_boundary_chain_walks_forward_inclusive():
     assert _boundary_chain([10, 20, 30, 40], 0, 2) == [10, 20, 30]
     assert _boundary_chain([10, 20, 30, 40], 3, 1) == [40, 10, 20]
@@ -154,6 +159,7 @@ def test_all_corners_visible_from_center_of_square():
 
 
 # --- Single interior-vertex split -------------------------------------------
+
 
 def test_split_square_at_center_vertex():
     points = SQUARE_PTS + [(0.5, 0.5, 0.0)]  # vid 5 at the centre
@@ -176,6 +182,7 @@ def test_project_face_and_point_drops_dominant_axis():
 
 # --- Public repair steps (end-to-end over the iterative loops) --------------
 
+
 @pytest.fixture
 def intersecting_mesh() -> Mesh:
     pytest.importorskip("shapely")
@@ -183,12 +190,12 @@ def intersecting_mesh() -> Mesh:
     # A's interior at (0.5, 0.5, 0).
     return make_mesh(
         [
-            (0.0, 0.0, 0.0),   # 1  A
-            (2.0, 0.0, 0.0),   # 2  A
-            (0.0, 2.0, 0.0),   # 3  A
+            (0.0, 0.0, 0.0),  # 1  A
+            (2.0, 0.0, 0.0),  # 2  A
+            (0.0, 2.0, 0.0),  # 3  A
             (0.5, 0.5, -1.0),  # 4  B below plane
-            (0.5, 0.5, 1.0),   # 5  B above plane
-            (0.5, 3.0, 1.0),   # 6  B
+            (0.5, 0.5, 1.0),  # 5  B above plane
+            (0.5, 3.0, 1.0),  # 6  B
         ],
         [[1, 2, 3], [4, 5, 6]],
     )
@@ -313,6 +320,7 @@ def test_plc_offset_iterative_early_returns():
 
 # --- Multi-hit collinear classification / repair ----------------------------
 
+
 def test_classify_multi_hit_face_collinear_two_points_are_collinear():
     face = _face(SQUARE_IDS)
     reports = [{"point": [0.3, 0.5, 0.0]}, {"point": [0.6, 0.5, 0.0]}]
@@ -353,6 +361,7 @@ def test_repair_multi_hit_collinear_chain_splits_face():
 
 
 # --- Orientation by adjacency ------------------------------------------------
+
 
 def test_orient_faces_consistently_runs_on_cube(unit_cube):
     faces = [_face(f.vertex_indices) for f in unit_cube.faces]

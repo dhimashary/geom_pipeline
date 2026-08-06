@@ -1,4 +1,5 @@
 """Repair protocol + shared base class."""
+
 from __future__ import annotations
 
 from abc import ABC
@@ -12,8 +13,8 @@ from geometry_pipeline.core.report import RepairResult
 
 class RepairStep(Protocol):
     name: ClassVar[str]
-    accepts: ClassVar[set[str]]            # IR kinds it can run on
-    handles: ClassVar[set[IssueKind]]      # IssueKinds this step addresses
+    accepts: ClassVar[set[str]]  # IR kinds it can run on
+    handles: ClassVar[set[IssueKind]]  # IssueKinds this step addresses
 
     def apply(
         self,

@@ -21,14 +21,16 @@ Caveats: see /memories notes — accuracy is bound by `pitch`; thin walls may
 leak; orientation probe is heuristic. Good enough as a first pass for
 acoustic enclosure detection.
 """
+
 from __future__ import annotations
 
 import logging
-from typing import Iterable, List, Sequence, Tuple, Optional
+from typing import List, Sequence, Tuple
 
 import numpy as np
 
 from geometry_pipeline.core.ir import Cavity
+
 try:
     # Prefer constrained Delaunay triangulation implemented in the geometry
     # kernel; import lazily to avoid requiring Shapely unless detection runs.
@@ -66,7 +68,9 @@ def _fan_triangulate(verts: Sequence[int]) -> List[Tuple[int, int, int]]:
     return [(verts[0], verts[i], verts[i + 1]) for i in range(1, len(verts) - 1)]
 
 
-def _triangulate_face_with_fallback(verts: Sequence[int], points: Sequence[Tuple[float, float, float]]):
+def _triangulate_face_with_fallback(
+    verts: Sequence[int], points: Sequence[Tuple[float, float, float]]
+):
     """Triangulate a polygon face using CDT if available, otherwise fall back
     to a simple fan triangulation. Returns a list of triangles as 1-based
     vertex id triples.
@@ -78,12 +82,15 @@ def _triangulate_face_with_fallback(verts: Sequence[int], points: Sequence[Tuple
                 return tris
         except Exception:
             # Fall through to fan triangulation on any error
-            logger.debug("CDT triangulation failed for a face; falling back to fan triangulation", exc_info=True)
+            logger.debug(
+                "CDT triangulation failed for a face; falling back to fan triangulation",
+                exc_info=True,
+            )
     return _fan_triangulate(verts)
 
 
 def detect_cavities(
-    faces: Sequence,                                   
+    faces: Sequence,
     unique_vertices: Sequence[Tuple[float, float, float]],
     *,
     pitch: float = 0.05,
@@ -111,7 +118,9 @@ def detect_cavities(
     if not faces or not unique_vertices:
         return []
 
-    logger.warning("Cavity detection is an experimental feature; results may be inaccurate and should be verified visually. Use `cavity_pitch` to adjust voxel size and `cavity_closing_iterations` to bridge small gaps.")
+    logger.warning(
+        "Cavity detection is an experimental feature; results may be inaccurate and should be verified visually. Use `cavity_pitch` to adjust voxel size and `cavity_closing_iterations` to bridge small gaps."
+    )
     # ---- 1. Triangulate (fan) and build a trimesh ---------------------------
     pts_arr = np.asarray(unique_vertices, dtype=float)
     tris: List[Tuple[int, int, int]] = []
@@ -129,7 +138,9 @@ def detect_cavities(
 
     tris_arr = np.asarray(tris, dtype=np.int64)
     mesh = trimesh.Trimesh(vertices=pts_arr, faces=tris_arr, process=False)
-    logger.warning("Triangulated mesh for cavity detection: %d faces -> %d triangles", len(faces), len(tris))
+    logger.warning(
+        "Triangulated mesh for cavity detection: %d faces -> %d triangles", len(faces), len(tris)
+    )
 
     # ---- 2. Voxelize surface ------------------------------------------------
     vox = mesh.voxelized(pitch=pitch)
@@ -147,7 +158,8 @@ def detect_cavities(
     labeled = labeled_padded[1:-1, 1:-1, 1:-1]
 
     cavity_labels = [
-        lbl for lbl in range(1, n_labels + 1)
+        lbl
+        for lbl in range(1, n_labels + 1)
         if lbl != outside_label and int(np.sum(labeled == lbl)) >= min_cavity_voxels
     ]
     if not cavity_labels:
@@ -157,7 +169,12 @@ def detect_cavities(
     # ---- 4. World ↔ voxel mapping ------------------------------------------
     # trimesh VoxelGrid: indices_to_points(idx) returns world-space centers.
     # We invert: world -> idx via origin + scale.
-    logger.warning("Probing %d faces against %d cavity labels (non-cavity space is label %d)", len(faces), len(cavity_labels), outside_label)
+    logger.warning(
+        "Probing %d faces against %d cavity labels (non-cavity space is label %d)",
+        len(faces),
+        len(cavity_labels),
+        outside_label,
+    )
     transform = np.asarray(vox.transform, dtype=float)
     origin = transform[:3, 3]
     # axis-aligned scale = pitch on the diagonal (assume isotropic)
@@ -202,10 +219,8 @@ def detect_cavities(
             cavity_faces[ln].setdefault(fi, +1)
 
     # Compute volumes and sort desc
-    voxel_vol = pitch ** 3
-    cavity_volumes = {
-        lbl: float(np.sum(labeled == lbl)) * voxel_vol for lbl in cavity_labels
-    }
+    voxel_vol = pitch**3
+    cavity_volumes = {lbl: float(np.sum(labeled == lbl)) * voxel_vol for lbl in cavity_labels}
     sorted_labels = sorted(cavity_labels, key=lambda l: -cavity_volumes[l])
 
     cavities: List[Cavity] = []
@@ -230,7 +245,8 @@ def detect_cavities(
 
     logger.info(
         "Detected %d cavity/cavities at pitch=%s: %s",
-        len(cavities), pitch,
+        len(cavities),
+        pitch,
         [(c.name, round(c.volume, 4), len(c.oriented_faces)) for c in cavities],
     )
     return cavities

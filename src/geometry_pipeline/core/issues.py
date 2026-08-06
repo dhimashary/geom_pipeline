@@ -1,4 +1,5 @@
 """Typed geometry issues produced by validators."""
+
 from __future__ import annotations
 
 import hashlib
@@ -21,8 +22,10 @@ class IssueKind(str, Enum):
     OVERLAPPING_FACE = "overlapping_face"
     COLLINEAR_FACE = "collinear_face"
 
+
 class DetectionStage(str, Enum):
     """When in the pipeline an issue was observed."""
+
     PRE = "pre"
     POST_STAGE = "post_stage"
     FINAL = "final"
@@ -35,6 +38,7 @@ class Issue:
     `id` is a stable content hash of (kind, payload) so that the *same*
     physical defect produces the *same* id across snapshots.
     """
+
     id: str
     kind: IssueKind
     stage: DetectionStage

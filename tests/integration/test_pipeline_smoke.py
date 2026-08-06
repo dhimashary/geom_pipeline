@@ -6,6 +6,7 @@ public pipeline (import -> validate -> repair -> export) over
 and writes output artifacts. Native cavity detection is disabled so the test
 does not depend on the compiled C++ kernel.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -97,4 +98,3 @@ def test_merged_result_describes_remaining_state(merged_run):
     assert isinstance(result, GeometryResult)
     assert set(result.issue_report) == {k.value for k in IssueKind}
     assert "post" in result.report
-

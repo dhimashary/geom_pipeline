@@ -1,4 +1,5 @@
 """Tests for JSON-native coercion of numpy payloads (tech-debt #7)."""
+
 from __future__ import annotations
 
 import json

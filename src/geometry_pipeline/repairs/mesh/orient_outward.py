@@ -5,6 +5,7 @@ Cheap and catches the common "OBJ exporter inverted everything" case.
 For local edge-by-edge consistency see ``orient_faces_consistently_by_adjacency``
 in ``_intersection_repairs.py``.
 """
+
 from __future__ import annotations
 
 from typing import ClassVar
@@ -15,8 +16,8 @@ from geometry_pipeline.core.issues import Issue, IssueKind
 from geometry_pipeline.core.report import RepairResult
 from geometry_pipeline.repairs.base import BaseRepair
 from geometry_pipeline.repairs.mesh._common import (
-    room_center_from_mesh,
     flip_all_faces_if_majority_inward,
+    room_center_from_mesh,
 )
 
 
@@ -37,7 +38,10 @@ class FlipFacesIfMajorityInwardRepair(BaseRepair):
         points = [(v.x, v.y, v.z) for v in geom.vertices]
         room_center = room_center_from_mesh(geom)
         flipped = flip_all_faces_if_majority_inward(
-            faces, points, room_center, logger=ctx.logger,
+            faces,
+            points,
+            room_center,
+            logger=ctx.logger,
         )
         new_mesh = Mesh(
             vertices=list(geom.vertices),
@@ -53,4 +57,3 @@ class FlipFacesIfMajorityInwardRepair(BaseRepair):
             issues=issues,
         )
         return new_mesh, result
-
