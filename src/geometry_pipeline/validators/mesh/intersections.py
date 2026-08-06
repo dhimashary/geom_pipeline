@@ -297,7 +297,7 @@ def detect_segment_facet_intersections_cdt_mesh(
                 continue
 
             hit_type = _classify_segment_triangle_hit(t, uu, vv, t_eps=1e-9, bary_eps=1e-9)
-            I = vadd(P0, vmul(sub(P1, P0), t))
+            intersection_point = vadd(P0, vmul(sub(P1, P0), t))
 
             facet_fid_coordinates = [points[vid - 1] for vid in tinfo["face_vids"]]
 
@@ -309,7 +309,7 @@ def detect_segment_facet_intersections_cdt_mesh(
                     "facet_fid": tinfo["fid"],
                     "facet_fid_coordinates": facet_fid_coordinates,
                     "facet_tri": (a, b, c),
-                    "point": I,
+                    "point": intersection_point,
                     "t_param": float(t),
                     "bary_u": float(uu),
                     "bary_v": float(vv),

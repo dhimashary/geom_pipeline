@@ -138,7 +138,6 @@ def detect_cavities_native(
         mesh_path = tmp_dir / "mesh.json"
         json_path = tmp_dir / "volumes.json"
         _write_mesh_json(faces, unique_vertices, mesh_path)
-        mesh_raw = mesh_path.read_text()
 
         try:
             proc = subprocess.run(

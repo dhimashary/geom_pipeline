@@ -109,7 +109,6 @@ def _process_and_instantiate_faces(
 
     for idx, raw_face in enumerate(raw_faces):
         grp = face_groups[idx] if idx < len(face_groups) else "default"
-        grp_mat = face_group_materials[idx] if idx < len(face_group_materials) else "default"
         if idx < len(material_id_array):
             mat = material_id_array[idx]
         elif idx < len(face_group_materials):

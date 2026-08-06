@@ -34,11 +34,19 @@ def triangulate_face_cdt_shapely(
     ax, ay, az = abs(nrm[0]), abs(nrm[1]), abs(nrm[2])
 
     if az >= ax and az >= ay:
-        proj = lambda pid: (points[pid - 1][0], points[pid - 1][1])
+
+        def proj(pid):
+            return (points[pid - 1][0], points[pid - 1][1])
+
     elif ay >= ax and ay >= az:
-        proj = lambda pid: (points[pid - 1][0], points[pid - 1][2])
+
+        def proj(pid):
+            return (points[pid - 1][0], points[pid - 1][2])
+
     else:
-        proj = lambda pid: (points[pid - 1][1], points[pid - 1][2])
+
+        def proj(pid):
+            return (points[pid - 1][1], points[pid - 1][2])
 
     face_ids = face[:]
     poly2d = [proj(pid) for pid in face_ids]
@@ -68,7 +76,9 @@ def triangulate_face_cdt_shapely(
     if len(cleaned_ids) == 3:
         return [cleaned_ids]
 
-    key = lambda x, y: (round(x, round_ndigits), round(y, round_ndigits))
+    def key(x, y):
+        return (round(x, round_ndigits), round(y, round_ndigits))
+
     coord_to_vid = {}
     for vid, (x, y) in zip(cleaned_ids, cleaned_2d):
         coord_to_vid[key(x, y)] = vid

@@ -5,11 +5,11 @@ import logging
 from pathlib import Path
 from typing import Any
 
-# Module logger
-logger = logging.getLogger(__name__)
-
 from geometry_pipeline.core.jsonable import to_jsonable
 from geometry_pipeline.core.report import PipelineResult
+
+# Module logger
+logger = logging.getLogger(__name__)
 
 
 class JsonReportWriter:

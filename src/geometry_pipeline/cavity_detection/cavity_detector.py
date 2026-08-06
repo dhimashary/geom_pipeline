@@ -25,7 +25,7 @@ acoustic enclosure detection.
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, List, Sequence, Tuple
+from typing import List, Sequence, Tuple
 
 import numpy as np
 
@@ -221,7 +221,7 @@ def detect_cavities(
     # Compute volumes and sort desc
     voxel_vol = pitch**3
     cavity_volumes = {lbl: float(np.sum(labeled == lbl)) * voxel_vol for lbl in cavity_labels}
-    sorted_labels = sorted(cavity_labels, key=lambda l: -cavity_volumes[l])
+    sorted_labels = sorted(cavity_labels, key=lambda lbl: -cavity_volumes[lbl])
 
     cavities: List[Cavity] = []
     for rank, lbl in enumerate(sorted_labels, start=1):

@@ -35,16 +35,19 @@ from geometry_pipeline.geometry_math.predicates import (
 )
 from geometry_pipeline.geometry_math.triangulation import triangulate_face_cdt_shapely
 from geometry_pipeline.io.importers.obj import clean_face_loop
-
-logger = logging.getLogger(__name__)
-
 from geometry_pipeline.repairs.mesh._common import (
+    _endpoint_vids_from_edge_t,
+    _find_face_by_fid,
     compact_vertices_and_remove_unused,
     get_or_create_vertex,
+    move_touching_endpoint_off_face,
+    polygon_centroid,
 )
 from geometry_pipeline.repairs.mesh._common import (
     flip_all_faces_if_majority_inward as _flip_all_faces_if_majority_inward,
 )
+
+logger = logging.getLogger(__name__)
 
 
 # Mesh-only helpers: require `Face` from `app.geometry.ir` with
@@ -839,12 +842,6 @@ def _repair_single_endpoint_face_interior_touch_by_triangulation(
     return new_faces, True, diag
 
 
-from geometry_pipeline.repairs.mesh._common import (
-    _endpoint_vids_from_edge_t,
-    _find_face_by_fid,
-    move_touching_endpoint_off_face,
-)
-
 # helpers moved to repairs._common
 
 
@@ -924,11 +921,6 @@ def repair_plc_by_offset_iterative(
 
 
 # -------- REPAIR MULTI HIT POINT-FACE INTERSECTION BY SPLITTING WITH NEW VERTEX --------
-def _find_face_by_fid(faces: List[Face], fid: int):  # type: ignore[no-redef]
-    for i, f in enumerate(faces):
-        if _face_fid(f, idx=i) == fid:
-            return f
-    return None
 
 
 def _face_plane_basis(face, points):
@@ -947,9 +939,6 @@ def _face_plane_basis(face, points):
 def _project_to_face_2d(p, c, u, v):
     d = sub(p, c)
     return (dot(d, u), dot(d, v))
-
-
-from geometry_pipeline.repairs.mesh._common import polygon_centroid
 
 
 def _classify_multi_hit_face_collinear(
