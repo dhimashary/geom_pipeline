@@ -81,14 +81,14 @@ def repair_geometry(
         geom = ImporterRegistry.for_extension(in_path.suffix).load(in_path)
         profile = wave_based_profile(detect_cavities=detect_cavities, volume_name=volume_name)
         ctx = Context(
-            tolerances=Tolerances(), logger=_log, profile_name=getattr(profile, "name", None)
+            tolerances=Tolerances(), logger=_log, profile_name=getattr(profile, "name", None) or ""
         )
         base = Path(output_dir) / in_path.stem
         result = run_pipeline(geom, profile, base, ctx)
     except Exception as exc:
         raise GeometryError(str(exc)) from exc
 
-    issue_report = kind_dict(result.initial.issues)
+    issue_report = kind_dict(result.initial.issues) if result.initial else {}
     report = snapshot_report(result)
     return GeometryResult(
         outputs=_collect_outputs(result),
@@ -143,7 +143,7 @@ def process_geometry(
         ctx = Context(
             tolerances=Tolerances(),
             logger=_log,
-            profile_name=getattr(profile, "name", None),
+            profile_name=getattr(profile, "name", None) or "",
             extras={"on_checkpoint": _raw_cb} if on_checkpoint is not None else {},
         )
         base = Path(output_dir) / in_path.stem

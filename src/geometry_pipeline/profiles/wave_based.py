@@ -106,8 +106,8 @@ def _wave_based_stages(
         Stage(
             name="intersections",
             repairs=[
-                TrimSegmentFaceIntersectionsRepair(detector=intersect),
-                RepairPlcSingleSplitsRepair(detector=intersect),
+                TrimSegmentFaceIntersectionsRepair(detector=intersect),  # type: ignore[list-item]
+                RepairPlcSingleSplitsRepair(detector=intersect),  # type: ignore[list-item]
                 # RepairPlcByOffsetRepair(detector=intersect),
             ],
             post_validators=[intersect, OverlappingFacesValidator()],
@@ -196,7 +196,7 @@ def wave_based_profile(
             # and converts it to a Rhino 3DM using the existing converter.
             # Placed after the OBJ exporter so the .obj file is available on disk.
             ExporterRegistry.get("3dm", Mesh.kind),
-            GmshGeoExporter(
+            GmshGeoExporter(  # type: ignore[list-item]
                 volume_name=volume_name,
                 repaired=True,
                 detect_cavities=detect_cavities,
