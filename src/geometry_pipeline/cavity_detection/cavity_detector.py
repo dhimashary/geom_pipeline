@@ -25,7 +25,7 @@ acoustic enclosure detection.
 from __future__ import annotations
 
 import logging
-from typing import List, Sequence, Tuple
+from typing import Any, Callable, List, Sequence, Tuple
 
 import numpy as np
 
@@ -36,7 +36,7 @@ try:
     # kernel; import lazily to avoid requiring Shapely unless detection runs.
     from geometry_pipeline.geometry_math.triangulation import triangulate_face_cdt_shapely
 except Exception:
-    triangulate_face_cdt_shapely = None  # type: Optional[callable]
+    triangulate_face_cdt_shapely = None  # type: Callable[..., Any] | None
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +113,7 @@ def detect_cavities(
     min_cavity_voxels : ignore cavities below this voxel count (noise filter).
     """
     import trimesh
-    from scipy import ndimage
+    from scipy import ndimage  # type: ignore[import-untyped]
 
     if not faces or not unique_vertices:
         return []

@@ -18,7 +18,7 @@ def remove_zero_area_faces_mesh(
     *,
     fatal_area_tol: float = 1e-12,
     min_altitude_tol: float = 0.0,
-    logger: logging.Logger = None,
+    logger: logging.Logger | None = None,
 ):
     if logger is None:
         logger = logging.getLogger(__name__)

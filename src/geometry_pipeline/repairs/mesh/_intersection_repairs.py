@@ -92,7 +92,7 @@ def trim_segment_face_intersections_iterative(
     logger=None,
 ) -> Tuple[List[Face], List[Tuple[float, float, float]], bool, Dict[str, Any]]:
     changed_any = False
-    actions = []
+    actions: list[dict[str, Any]] = []
 
     for it in range(1, max_iters + 1):
         plc_hits = plc_report_supplier(faces, points)
@@ -418,7 +418,7 @@ def repair_plc_single_splits_iterative(
             chosen_face = _find_face_by_fid(faces, chosen_fid)
 
             cls = _classify_multi_hit_face_collinear(
-                chosen_face,
+                chosen_face,  # type: ignore[arg-type]
                 chosen_reports,
                 points,
                 tol_m=0.01,
