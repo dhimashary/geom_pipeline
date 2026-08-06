@@ -166,10 +166,11 @@ def polygon_area_3d(
 
 def newell_normal_from_points(face_ids: Iterable[int], points: List[Tuple[float, float, float]]):
     nx = ny = nz = 0.0
-    n = len(list(face_ids))
+    face_ids_list = list(face_ids)
+    n = len(face_ids_list)
     for i in range(n):
-        p = points[face_ids[i] - 1]
-        q = points[face_ids[(i + 1) % n] - 1]
+        p = points[face_ids_list[i] - 1]
+        q = points[face_ids_list[(i + 1) % n] - 1]
         nx += (p[1] - q[1]) * (p[2] + q[2])
         ny += (p[2] - q[2]) * (p[0] + q[0])
         nz += (p[0] - q[0]) * (p[1] + q[1])
