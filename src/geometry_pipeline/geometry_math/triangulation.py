@@ -98,7 +98,7 @@ def triangulate_face_cdt_shapely(
         vids = []
         ok = True
         for x, y in coords:
-            vid = coord_to_vid.get(key(x, y))
+            vid = coord_to_vid.get(key(x, y))  # type: ignore[assignment]
             if vid is None:
                 ok = False
                 break

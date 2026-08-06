@@ -60,6 +60,6 @@ class BaseRepair(ABC):
             affected_ids=self.affected_ids(issues) if affected_ids is None else affected_ids,
             before_count=before_count,
             after_count=after_count,
-            iterations=iterations,
+            iterations=iterations or 1,
             details=details,
         )

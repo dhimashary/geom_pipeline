@@ -64,5 +64,5 @@ class Issue:
             kind=kind,
             stage=stage,
             stage_name=stage_name,
-            payload=payload,
+            payload=payload,  # type: ignore[arg-type]
         )

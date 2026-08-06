@@ -7,6 +7,8 @@ cap with a summary issue.
 
 from __future__ import annotations
 
+from typing import Callable
+
 from geometry_pipeline.core.issues import DetectionStage, Issue, IssueKind
 
 
@@ -17,7 +19,7 @@ def cap_and_summarize(
     stage: DetectionStage,
     stage_name: str,
     max_reports: int,
-    payload_of: callable = None,
+    payload_of: Callable[[dict], dict] | None = None,
 ) -> list[Issue]:
     """Convert raw detector dicts to Issues, applying the report cap.
 

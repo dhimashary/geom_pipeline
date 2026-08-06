@@ -15,8 +15,8 @@ from pathlib import Path
 
 import numpy as np
 import rhino3dm
-from shapely import constrained_delaunay_triangles
-from shapely.geometry import Polygon
+from shapely import constrained_delaunay_triangles  # type: ignore[import-untyped]
+from shapely.geometry import Polygon  # type: ignore[import-untyped]
 
 from geometry_pipeline.core.ir import Mesh
 from geometry_pipeline.io.exporters.mesh_obj import MeshObjExporter
