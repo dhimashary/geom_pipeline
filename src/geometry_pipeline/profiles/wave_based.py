@@ -84,7 +84,7 @@ def _wave_based_stages(
         # tjunc measured here = ORIGINAL count (orient does not change tjuncs)
         Stage(
             name="orient",
-            repairs=[FlipFacesIfMajorityInwardRepair()],
+            repairs=[FlipFacesIfMajorityInwardRepair()],  # type: ignore[list-item]
             post_validators=[tjunc],
         ),
         # === INSPECT CHECKPOINT ===
@@ -93,7 +93,7 @@ def _wave_based_stages(
         # T-junction is not double-counted as an intersection AND a hole).
         Stage(
             name="t_junctions",
-            repairs=[FixTJunctionsIterativeRepair(detector=tjunc)],
+            repairs=[FixTJunctionsIterativeRepair(detector=tjunc)],  # type: ignore[list-item]
             post_validators=[
                 intersect,
                 OverlappingFacesValidator(),
