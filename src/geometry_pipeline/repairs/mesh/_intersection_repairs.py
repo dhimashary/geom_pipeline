@@ -37,7 +37,6 @@ from geometry_pipeline.geometry_math.triangulation import triangulate_face_cdt_s
 from geometry_pipeline.io.importers.obj import clean_face_loop
 from geometry_pipeline.repairs.mesh._common import (
     _endpoint_vids_from_edge_t,
-    _find_face_by_fid,
     compact_vertices_and_remove_unused,
     get_or_create_vertex,
     move_touching_endpoint_off_face,
@@ -921,6 +920,11 @@ def repair_plc_by_offset_iterative(
 
 
 # -------- REPAIR MULTI HIT POINT-FACE INTERSECTION BY SPLITTING WITH NEW VERTEX --------
+def _find_face_by_fid(faces: List[Face], fid: int):
+    for i, f in enumerate(faces):
+        if _face_fid(f, idx=i) == fid:
+            return f
+    return None
 
 
 def _face_plane_basis(face, points):
