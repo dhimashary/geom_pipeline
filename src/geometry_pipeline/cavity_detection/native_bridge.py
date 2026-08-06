@@ -122,8 +122,8 @@ def detect_cavities_native(
     binary = native_detector_path()
     if binary is None:
         raise FileNotFoundError(
-            "Native volume detector not found. Build it with ./app/geometry/volume/_native/build.sh "
-            "or set VOLUME_DETECTOR_BIN."
+            "Native volume detector not found. Build it with "
+            "./app/geometry/volume/_native/build.sh or set VOLUME_DETECTOR_BIN."
         )
 
     logger.info(

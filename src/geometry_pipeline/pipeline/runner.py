@@ -1,4 +1,6 @@
-"""Top-level orchestration: importer -> (convert) -> pre-validate -> stages -> final-validate -> export."""
+"""Top-level orchestration: importer -> (convert) -> pre-validate -> stages ->
+final-validate -> export.
+"""
 
 from __future__ import annotations
 

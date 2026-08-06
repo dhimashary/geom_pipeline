@@ -178,7 +178,8 @@ class GmshGeoExporter:
         tmp_fd = None
         tmp_path = None
         try:
-            # Create a temp file in the same directory to ensure atomic replace works across filesystems
+            # Create a temp file in the same directory to ensure atomic replace works
+            # across filesystems
             tmp_dir = target_path.parent if target_path.parent.exists() else None
             with tempfile.NamedTemporaryFile(
                 mode="w", delete=False, dir=tmp_dir, prefix=target_path.stem + "_", suffix=".geo"

@@ -54,7 +54,8 @@ logger = logging.getLogger(__name__)
 def _face_vids(face) -> List[int]:
     if not hasattr(face, "vertex_indices"):
         raise TypeError(
-            "_face_vids: legacy FaceRecord not accepted; migrate callers to use app.geometry.ir.Face"
+            "_face_vids: legacy FaceRecord not accepted; migrate callers to use "
+            "app.geometry.ir.Face"
         )
     return list(face.vertex_indices)
 
@@ -62,7 +63,8 @@ def _face_vids(face) -> List[int]:
 def _set_face_vids(face, vids: List[int]):
     if not hasattr(face, "vertex_indices"):
         raise TypeError(
-            "_set_face_vids: legacy FaceRecord not accepted; migrate callers to use app.geometry.ir.Face"
+            "_set_face_vids: legacy FaceRecord not accepted; migrate callers to use "
+            "app.geometry.ir.Face"
         )
     face.vertex_indices = vids
 
@@ -77,7 +79,8 @@ def _face_fid(face, default=None, idx=None):
 def _reverse_face_vids(face):
     if not hasattr(face, "vertex_indices"):
         raise TypeError(
-            "_reverse_face_vids: legacy FaceRecord not accepted; migrate callers to use app.geometry.ir.Face"
+            "_reverse_face_vids: legacy FaceRecord not accepted; migrate callers to use "
+            "app.geometry.ir.Face"
         )
     face.vertex_indices.reverse()
 
@@ -398,7 +401,8 @@ def repair_plc_single_splits_iterative(
 
         if logger:
             logger.info(
-                "[PLC REPAIR] iter=%d plc_hits=%d endpoint_face_hits=%d multi_hit_faces=%d single_hit_candidates=%d",
+                "[PLC REPAIR] iter=%d plc_hits=%d endpoint_face_hits=%d "
+                "multi_hit_faces=%d single_hit_candidates=%d",
                 it,
                 len(plc_hits),
                 len(endpoint_face_hits),
@@ -444,7 +448,8 @@ def repair_plc_single_splits_iterative(
             else:
                 if logger:
                     logger.info(
-                        "CURRENTLY ONLY COLLINEAR multi-hit repair is implemented; face=%d classified as NONCOLLINEAR (max_dev=%.6g); skipping for now",
+                        "CURRENTLY ONLY COLLINEAR multi-hit repair is implemented; "
+                        "face=%d classified as NONCOLLINEAR (max_dev=%.6g); skipping for now",
                         chosen_fid,
                         cls["max_dev"],
                     )
@@ -456,7 +461,8 @@ def repair_plc_single_splits_iterative(
 
             if logger:
                 logger.info(
-                    "[PLC REPAIR] chosen single-hit iter=%d facet_fid=%d edge=%s point=(%.6f,%.6f,%.6f)",
+                    "[PLC REPAIR] chosen single-hit iter=%d facet_fid=%d edge=%s "
+                    "point=(%.6f,%.6f,%.6f)",
                     it,
                     chosen_report["facet_fid"],
                     chosen_report["edge"],
@@ -1321,7 +1327,8 @@ def trim_component_against_facet_plane(
         diag["max_component_fraction"] = max_component_fraction
         if logger is not None:
             logger.warning(
-                "[TRIM] facet_fid=%d component_faces=%d/%d (%.1f%%) exceeds cap %.1f%% — skipping trim",
+                "[TRIM] facet_fid=%d component_faces=%d/%d (%.1f%%) exceeds cap %.1f%% — "
+                "skipping trim",
                 clipping_facet_fid,
                 len(component_face_fids),
                 len(faces),
@@ -1380,7 +1387,8 @@ def trim_component_against_facet_plane(
 
     if logger is not None:
         logger.info(
-            "[TRIM] facet_fid=%d component_faces=%d clipped=%d removed=%d new_vertices=%d status=%s",
+            "[TRIM] facet_fid=%d component_faces=%d clipped=%d removed=%d new_vertices=%d "
+            "status=%s",
             clipping_facet_fid,
             len(component_face_fids),
             diag["faces_clipped"],

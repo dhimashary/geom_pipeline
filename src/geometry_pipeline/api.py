@@ -173,7 +173,9 @@ _ISSUE_DESCRIPTIONS: dict[IssueKind, str] = {
     IssueKind.POSSIBLE_HOLE: "A loop of boundary edges suggests a missing face (hole).",
     IssueKind.SMALL_FACE: "A face is smaller than the minimum-area tolerance.",
     IssueKind.OVERLAPPING_FACE: "Two faces occupy the same region of space.",
-    IssueKind.COLLINEAR_FACE: "A face's vertices are collinear or nearly collinear (collapsed to a line).",
+    IssueKind.COLLINEAR_FACE: (
+        "A face's vertices are collinear or nearly collinear (collapsed to a line)."
+    ),
 }
 
 

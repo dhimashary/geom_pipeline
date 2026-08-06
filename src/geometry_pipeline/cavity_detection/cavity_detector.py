@@ -118,9 +118,6 @@ def detect_cavities(
     if not faces or not unique_vertices:
         return []
 
-    logger.warning(
-        "Cavity detection is an experimental feature; results may be inaccurate and should be verified visually. Use `cavity_pitch` to adjust voxel size and `cavity_closing_iterations` to bridge small gaps."
-    )
     # ---- 1. Triangulate (fan) and build a trimesh ---------------------------
     pts_arr = np.asarray(unique_vertices, dtype=float)
     tris: List[Tuple[int, int, int]] = []
