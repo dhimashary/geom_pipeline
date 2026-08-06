@@ -1,0 +1,33 @@
+# Pre-commit hooks for the geometry-pipeline package.
+#
+# geometry-pipeline is its own git repo (a submodule of CHORAS), so this config
+# lives at the submodule root and all paths are relative to it. Install and run
+# from INSIDE the geometry-pipeline/ directory:
+#
+#   cd geometry-pipeline
+#   pre-commit install
+#   pre-commit run --all-files
+#
+# Ruff auto-discovers pyproject.toml (select = ["E", "W", "F", "I"], line-length = 100).
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.1
+    hooks:
+      # Lint (and auto-fix the safe subset) — fails the commit on any remaining
+      # violation so E501/E402/etc. must be resolved before the commit lands.
+      - id: ruff-check
+        args: [--fix]
+      # Formatter (equivalent to `ruff format`).
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      # Type-check the whole package from the developer's environment so the
+      # installed project deps + stubs (shapely, scipy, rhino3dm, ...) resolve.
+      - id: mypy-geometry-pipeline
+        name: mypy (geometry-pipeline)
+        entry: python -m mypy src/geometry_pipeline --show-error-codes
+        language: system
+        pass_filenames: false
+        files: \.py$
