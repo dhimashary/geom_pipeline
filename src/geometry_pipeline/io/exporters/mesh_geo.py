@@ -10,7 +10,7 @@ from typing import Dict, List, Optional, Tuple
 
 import rhino3dm
 
-from geometry_pipeline.core.ir import Cavity, Mesh
+from geometry_pipeline.core.ir import Cavity, Geometry, Mesh
 from geometry_pipeline.geometry_math.geometry_math import uedge
 
 logger = logging.getLogger(__name__)
@@ -26,6 +26,7 @@ class GmshGeoExporter:
         detection_mode: str = "native",
         cavity_pitch: float = 0.05,
         cavity_closing_iterations: int = 0,
+        cavities: Optional[List[Cavity]] = None,
     ) -> None:
         """
         Parameters
@@ -48,6 +49,8 @@ class GmshGeoExporter:
             be smaller than the smallest wall thickness you care about.
         cavity_closing_iterations : Optional morphological closing iterations
             (voxel detector only) to bridge sub-pitch gaps before labeling.
+        cavities : Pre-computed cavities to write directly. When given, they
+            take priority over auto-detection.
         """
         self.volume_name = volume_name
         self.repaired = repaired
@@ -55,24 +58,27 @@ class GmshGeoExporter:
         self.detection_mode = detection_mode
         self.cavity_pitch = cavity_pitch
         self.cavity_closing_iterations = cavity_closing_iterations
+        self.cavities = cavities
 
     def write(
         self,
-        geom: Mesh,
+        geom: Geometry,
         path: Path,
-        cavities: Optional[List[Cavity]] = None,
     ) -> None:
         """Write GEO file.
 
         Cavity sources, in priority order:
-          1. Explicit `cavities` argument (caller-provided).
-          2. Auto-detected cavities (when `self.detect_cavities=True`).
+          1. Constructor-provided ``cavities``.
+          2. Auto-detected cavities (when ``self.detect_cavities=True``).
           3. None -> legacy single-volume output.
         Detection failures fall back to legacy output with a warning.
         """
+        if not isinstance(geom, Mesh):
+            raise TypeError(f"GmshGeoExporter only writes Mesh geometry, got {type(geom).__name__}")
         points = [(v.x, v.y, v.z) for v in geom.vertices]
         faces = list(geom.faces)
 
+        cavities = self.cavities
         if cavities is None and self.detect_cavities:
             cavities = self._run_detection(faces, points)
 
