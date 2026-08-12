@@ -137,11 +137,10 @@ def run_checkpoint_exporters(
         output_path=str(output_path),
     )
     for exporter in stage.exporters:
+        # A declared capability that fails is fatal: writing without the injected
+        # result would emit a silently-wrong artifact, so let it propagate.
         if isinstance(exporter, SupportsPipelineResult):
-            try:
-                exporter.set_pipeline_result(interim)
-            except Exception:
-                ctx.logger.exception("[pipeline] checkpoint exporter.set_pipeline_result failed")
+            exporter.set_pipeline_result(interim)
         target = (
             exporter.path_for(output_path) if isinstance(exporter, SupportsPathFor) else output_path
         )
@@ -227,12 +226,9 @@ def run_pipeline(
     )
 
     for exporter in profile.exporters:
-        # Allow exporters to receive the full pipeline result when they support it.
+        # A declared capability that fails is fatal (see run_checkpoint_exporters).
         if isinstance(exporter, SupportsPipelineResult):
-            try:
-                exporter.set_pipeline_result(pipeline_result)
-            except Exception:
-                ctx.logger.exception("[pipeline] exporter.set_pipeline_result failed")
+            exporter.set_pipeline_result(pipeline_result)
 
         target = (
             exporter.path_for(output_path) if isinstance(exporter, SupportsPathFor) else output_path
