@@ -15,7 +15,6 @@ from __future__ import annotations
 from geometry_pipeline.core.ir import Mesh
 from geometry_pipeline.core.profile import SimulationProfile, Stage
 from geometry_pipeline.core.tolerances import Tolerances
-from geometry_pipeline.io.exporters.mesh_geo import GmshGeoExporter
 from geometry_pipeline.io.registry import ExporterRegistry
 from geometry_pipeline.repairs.mesh.deduplicate_vertices import DeduplicateVerticesRepair
 from geometry_pipeline.repairs.mesh.fix_t_junctions import FixTJunctionsIterativeRepair
@@ -147,7 +146,7 @@ def _inspect_checkpoint_exporters(*, detect_cavities: bool = True) -> list:
     keeps it ``True`` so the checkpoint geo matches the historical inspect run.
     """
     return [
-        GmshGeoExporter(repaired=False, detect_cavities=detect_cavities),
+        ExporterRegistry.get("geo", Mesh.kind, repaired=False, detect_cavities=detect_cavities),
         JsonReportWriter(
             issue_suffix="_inspect_issue.json",
             issue_source="composite",
@@ -198,7 +197,9 @@ def default_profile(
             # and converts it to a Rhino 3DM using the existing converter.
             # Placed after the OBJ exporter so the .obj file is available on disk.
             ExporterRegistry.get("3dm", Mesh.kind),
-            GmshGeoExporter(  # type: ignore[list-item]
+            ExporterRegistry.get(
+                "geo",
+                Mesh.kind,
                 volume_name=volume_name,
                 repaired=True,
                 detect_cavities=detect_cavities,

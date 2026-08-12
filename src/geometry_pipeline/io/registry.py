@@ -87,8 +87,15 @@ class ExporterRegistry:
         cls._by_key[cls._key(fmt, kind)] = exporter
 
     @classmethod
-    def get(cls, fmt: str, kind: str = "mesh") -> Exporter:
-        """Return an exporter instance for the given format and IR kind."""
+    def get(cls, fmt: str, kind: str = "mesh", **config: object) -> Exporter:
+        """Return an exporter instance for the given format and IR kind.
+
+        Extra keyword arguments are forwarded to the exporter constructor, so
+        config-bearing exporters (e.g. the GEO writer's ``volume_name`` /
+        ``detect_cavities``) can be resolved through the registry like the
+        no-arg ones. Passing config for a format registered as a pre-built
+        *instance* is an error, since the instance is already configured.
+        """
         key = cls._key(fmt, kind)
         exp = cls._by_key.get(key)
         if exp is None:
@@ -97,7 +104,14 @@ class ExporterRegistry:
             exp = cls._by_key.get(key)
             if exp is None:
                 raise ValueError(f"No exporter registered for format={fmt!r}, kind={kind!r}")
-        return exp() if isinstance(exp, type) else exp
+        if isinstance(exp, type):
+            return exp(**config)
+        if config:
+            raise ValueError(
+                f"Exporter for format={fmt!r}, kind={kind!r} is a pre-built instance "
+                f"and cannot accept config: {sorted(config)}"
+            )
+        return exp
 
     @classmethod
     def _register_builtins(cls) -> None:
