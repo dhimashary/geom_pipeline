@@ -49,16 +49,8 @@ class ImporterRegistry:
             from geometry_pipeline.io.importers.obj import ObjImporter
         except Exception:
             ObjImporter = None  # type: ignore[assignment,misc]
-        try:
-            from geometry_pipeline.io.importers.dxf import DxfImporter
-        except Exception:
-            DxfImporter = None  # type: ignore[assignment,misc]
-        try:
-            from geometry_pipeline.io.importers.rhino import Rhino3dmImporter
-        except Exception:
-            Rhino3dmImporter = None  # type: ignore[assignment,misc]
 
-        for imp in (ObjImporter, DxfImporter, Rhino3dmImporter):
+        for imp in (ObjImporter,):
             if imp is not None:
                 cls.register(imp)
 
@@ -67,8 +59,8 @@ class ExporterRegistry:
     """Resolve an exporter from a (format, IR kind) pair.
 
     A single output format (e.g. ``"obj"``) can have more than one
-    implementation depending on the input IR kind — a ``Mesh`` is written
-    differently than a ``BRep``. Keying on both lets the runner pick the
+    implementation depending on the input IR kind — a ``Mesh`` may be written
+    differently than another IR kind. Keying on both lets the runner pick the
     right algorithm without the exporter branching internally on geometry
     type. ``kind`` defaults to ``"mesh"`` since that is the only IR the
     built-in exporters currently consume.

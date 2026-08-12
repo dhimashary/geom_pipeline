@@ -1,4 +1,6 @@
-"""Wave-based (FEM/FDTD) simulation profile.
+"""Default geometry-repair simulation profile.
+
+This is the single profile CHORAS runs for every uploaded geometry.
 
 The stage order encodes geometric dependencies:
   1. dedup / degenerate / orient — preconditions for the topology checks below.
@@ -37,7 +39,7 @@ from geometry_pipeline.validators.mesh.small_faces import SmallFacesValidator
 from geometry_pipeline.validators.mesh.t_junctions import TJunctionsValidator
 
 
-def _wave_based_pre_validators(tjunc, intersect) -> list:
+def _default_pre_validators(tjunc, intersect) -> list:
     return [
         NonPlanarFacesValidator(),
         DuplicateVerticesValidator(),
@@ -52,13 +54,13 @@ def _wave_based_pre_validators(tjunc, intersect) -> list:
     ]
 
 
-def _wave_based_stages(
+def _default_stages(
     tjunc,
     intersect,
     *,
     checkpoint_exporters=(),
 ) -> list[Stage]:
-    """Single source of truth for the wave-based stage order.
+    """Single source of truth for the default stage order.
 
     The order is what makes detection meaningful (T-junctions only detectable
     after dedupe; intersections only meaningful after the tj fix).
@@ -120,7 +122,7 @@ def _wave_based_stages(
     return stages
 
 
-def _wave_based_final_validators(tjunc, intersect) -> list:
+def _default_final_validators(tjunc, intersect) -> list:
     return [
         NonPlanarFacesValidator(),
         ZeroAreaFaceValidator(),
@@ -154,14 +156,14 @@ def _inspect_checkpoint_exporters(*, detect_cavities: bool = True) -> list:
     ]
 
 
-def wave_based_profile(
+def default_profile(
     volume_name: str = "RoomVolume",
     *,
     detect_cavities: bool = False,
     cavity_pitch: float = 0.05,
     cavity_closing_iterations: int = 0,
 ) -> SimulationProfile:
-    """Merged wave-based profile: one pass emits both the inspect and the
+    """Merged default profile: one pass emits both the inspect and the
     fully-repaired artifacts.
 
     Export points:
@@ -181,15 +183,15 @@ def wave_based_profile(
     tjunc = TJunctionsValidator()
     intersect = IntersectionsValidator()
     return SimulationProfile(
-        name="wave_based",
+        name="default",
         target_ir=Mesh,
-        pre_validators=_wave_based_pre_validators(tjunc, intersect),
-        stages=_wave_based_stages(
+        pre_validators=_default_pre_validators(tjunc, intersect),
+        stages=_default_stages(
             tjunc,
             intersect,
             checkpoint_exporters=_inspect_checkpoint_exporters(detect_cavities=detect_cavities),
         ),
-        final_validators=_wave_based_final_validators(tjunc, intersect),
+        final_validators=_default_final_validators(tjunc, intersect),
         exporters=[
             ExporterRegistry.get("obj", Mesh.kind),
             # 3DM exporter consumes the OBJ produced by the OBJ exporter

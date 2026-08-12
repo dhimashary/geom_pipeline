@@ -5,7 +5,7 @@ smaller than the wavelength of interest; faces below ~10 cm are almost
 always either modelling artefacts or unintended slivers. Default threshold
 comes from `Tolerances.small_face_max_dim` (0.10 m).
 
-NOTE: not wired into `wave_based_profile` yet — see tech-debt #11.
+NOTE: not wired into `default_profile` yet — see tech-debt #11.
 """
 
 from __future__ import annotations

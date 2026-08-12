@@ -11,7 +11,6 @@ from __future__ import annotations
 import pytest
 
 from conftest import make_mesh
-from geometry_pipeline.core.ir import BRep
 from geometry_pipeline.core.issues import IssueKind
 from geometry_pipeline.repairs.mesh.compact_vertices import CompactVerticesRepair
 from geometry_pipeline.repairs.mesh.deduplicate_vertices import DeduplicateVerticesRepair
@@ -140,6 +139,10 @@ def test_fix_t_junctions_resolves_the_junction(ctx):
 # --- accept-guard ------------------------------------------------------------
 
 
+class _NotAMesh:
+    kind = "notmesh"
+
+
 def test_repair_rejects_unsupported_geometry(ctx):
     with pytest.raises(TypeError):
-        DeduplicateVerticesRepair().apply(BRep(), [], ctx)
+        DeduplicateVerticesRepair().apply(_NotAMesh(), [], ctx)

@@ -309,14 +309,12 @@ class GmshGeoExporter:
     def _run_native_detection(self, faces, points) -> Optional[List[Cavity]]:
         """Return cavities from the native detector.
 
-        Raises when the native binary is missing or detection fails.
+        Raises when the native binary is missing or detection fails so the
+        native binary is a hard requirement for cavity detection.
         """
         from ...cavity_detection.native_bridge import detect_cavities_native
 
-        try:
-            return detect_cavities_native(faces, points)
-        except Exception:
-            return None
+        return detect_cavities_native(faces, points)
 
     def _run_voxel_detection(self, faces, points) -> Optional[List[Cavity]]:
         try:

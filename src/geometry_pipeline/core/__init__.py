@@ -3,16 +3,14 @@
 from geometry_pipeline.core.context import Context
 from geometry_pipeline.core.diff import SnapshotDiff, diff_snapshots
 from geometry_pipeline.core.ir import (
-    BRep,
     Cavity,
-    Curve,
+    Exporter,
     Face,
     Geometry,
-    LayerInfo,
     MaterialInfo,
     Mesh,
-    PointCloud,
-    Surface,
+    SupportsPathFor,
+    SupportsPipelineResult,
     Vertex,
 )
 from geometry_pipeline.core.issues import DetectionStage, Issue, IssueKind
@@ -26,26 +24,24 @@ from geometry_pipeline.core.report import (
 from geometry_pipeline.core.tolerances import Tolerances
 
 __all__ = [
-    "BRep",
     "Cavity",
     "Context",
-    "Curve",
     "DetectionStage",
+    "Exporter",
     "Face",
     "Geometry",
     "Issue",
     "IssueKind",
-    "LayerInfo",
     "MaterialInfo",
     "Mesh",
     "PipelineResult",
-    "PointCloud",
     "RepairReport",
     "RepairResult",
     "SimulationProfile",
     "SnapshotDiff",
     "Stage",
-    "Surface",
+    "SupportsPathFor",
+    "SupportsPipelineResult",
     "Tolerances",
     "ValidationSnapshot",
     "Vertex",

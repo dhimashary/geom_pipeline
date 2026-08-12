@@ -1,4 +1,4 @@
-"""Registry for IR <-> IR converters (e.g. BRep -> Mesh tessellation)."""
+"""Registry for IR <-> IR converters (e.g. tessellating one IR kind into another)."""
 
 from __future__ import annotations
 

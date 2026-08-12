@@ -13,7 +13,7 @@ import numpy as np
 import pytest
 
 from geometry_pipeline.core.diff import diff_snapshots
-from geometry_pipeline.core.ir import BRep, Face, Mesh, PointCloud, Vertex
+from geometry_pipeline.core.ir import Face, Mesh, Vertex
 from geometry_pipeline.core.issues import (
     DetectionStage,
     Issue,
@@ -108,8 +108,6 @@ def test_mesh_defaults_are_empty_and_independent():
 
 def test_geometry_kind_discriminators():
     assert Mesh.kind == "mesh"
-    assert BRep.kind == "brep"
-    assert PointCloud.kind == "pointcloud"
 
 
 def test_vertex_is_frozen_and_hashable():

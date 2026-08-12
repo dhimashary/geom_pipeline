@@ -12,10 +12,11 @@ from .core.tolerances import Tolerances
 # Internal imports — all private to the package; the facade is the public surface.
 from .io.registry import ImporterRegistry
 from .pipeline.runner import run_pipeline
-from .profiles.wave_based import wave_based_profile
+from .profiles.default import default_profile
 from .reporting.frontend_schema import kind_dict, snapshot_report
 
-SUPPORTED_INPUTS = (".obj", ".3dm", ".dxf")
+# `.3dm` is an export format only; the Rhino importer is not implemented yet.
+SUPPORTED_INPUTS = (".obj",)
 
 _log = logging.getLogger("choras_geometry")
 
@@ -79,7 +80,7 @@ def repair_geometry(
     in_path = Path(input_path)
     try:
         geom = ImporterRegistry.for_extension(in_path.suffix).load(in_path)
-        profile = wave_based_profile(detect_cavities=detect_cavities, volume_name=volume_name)
+        profile = default_profile(detect_cavities=detect_cavities, volume_name=volume_name)
         ctx = Context(
             tolerances=Tolerances(), logger=_log, profile_name=getattr(profile, "name", None) or ""
         )
@@ -106,7 +107,7 @@ def process_geometry(
     detect_cavities: bool = True,
     on_checkpoint: Optional[Callable[[dict], None]] = None,
 ) -> GeometryResult:
-    """Run the merged wave-based pipeline in a single pass.
+    """Run the merged default pipeline in a single pass.
 
     One run emits all geometry artifacts:
       * the initial bundle ``<stem>.3dm`` + ``<stem>.zip`` (raw upload),
@@ -139,7 +140,7 @@ def process_geometry(
 
     try:
         geom = ImporterRegistry.for_extension(in_path.suffix).load(in_path)
-        profile = wave_based_profile(detect_cavities=detect_cavities, volume_name=volume_name)
+        profile = default_profile(detect_cavities=detect_cavities, volume_name=volume_name)
         ctx = Context(
             tolerances=Tolerances(),
             logger=_log,
