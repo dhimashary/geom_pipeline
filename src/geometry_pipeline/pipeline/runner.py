@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from geometry_pipeline.core.context import Context
-from geometry_pipeline.core.ir import Geometry
+from geometry_pipeline.core.ir import Geometry, SupportsPathFor, SupportsPipelineResult
 from geometry_pipeline.core.issues import DetectionStage, Issue
 from geometry_pipeline.core.profile import SimulationProfile, Stage
 from geometry_pipeline.core.report import (
@@ -137,12 +137,14 @@ def run_checkpoint_exporters(
         output_path=str(output_path),
     )
     for exporter in stage.exporters:
-        if hasattr(exporter, "set_pipeline_result"):
+        if isinstance(exporter, SupportsPipelineResult):
             try:
                 exporter.set_pipeline_result(interim)
             except Exception:
                 ctx.logger.exception("[pipeline] checkpoint exporter.set_pipeline_result failed")
-        target = getattr(exporter, "path_for", lambda p: p)(output_path)
+        target = (
+            exporter.path_for(output_path) if isinstance(exporter, SupportsPathFor) else output_path
+        )
         exporter.write(geom, target)
         ctx.logger.info("[pipeline] export(%s) wrote %s", stage.name, target)
 
@@ -226,13 +228,15 @@ def run_pipeline(
 
     for exporter in profile.exporters:
         # Allow exporters to receive the full pipeline result when they support it.
-        if hasattr(exporter, "set_pipeline_result"):
+        if isinstance(exporter, SupportsPipelineResult):
             try:
                 exporter.set_pipeline_result(pipeline_result)
             except Exception:
                 ctx.logger.exception("[pipeline] exporter.set_pipeline_result failed")
 
-        target = getattr(exporter, "path_for", lambda p: p)(output_path)
+        target = (
+            exporter.path_for(output_path) if isinstance(exporter, SupportsPathFor) else output_path
+        )
         exporter.write(geom, target)
         ctx.logger.info(
             "[pipeline] wrote %s at %s",
