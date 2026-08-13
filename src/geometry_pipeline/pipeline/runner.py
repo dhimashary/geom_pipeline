@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from geometry_pipeline.core.context import Context
-from geometry_pipeline.core.ir import Geometry, SupportsPathFor, SupportsPipelineResult
+from geometry_pipeline.core.ir import Geometry
 from geometry_pipeline.core.issues import DetectionStage, Issue
 from geometry_pipeline.core.profile import SimulationProfile, Stage
 from geometry_pipeline.core.report import (
@@ -137,15 +137,13 @@ def run_checkpoint_exporters(
         output_path=str(output_path),
     )
     for exporter in stage.exporters:
-        # A declared capability that fails is fatal: writing without the injected
-        # result would emit a silently-wrong artifact, so let it propagate.
-        if isinstance(exporter, SupportsPipelineResult):
-            exporter.set_pipeline_result(interim)
-        target = (
-            exporter.path_for(output_path) if isinstance(exporter, SupportsPathFor) else output_path
-        )
+        target = exporter.path_for(output_path)
         exporter.write(geom, target)
         ctx.logger.info("[pipeline] export(%s) wrote %s", stage.name, target)
+    for reporter in stage.reporters:
+        target = reporter.path_for(output_path)
+        reporter.write(interim, target)
+        ctx.logger.info("[pipeline] report(%s) wrote %s", stage.name, target)
 
     if not stage.checkpoint:
         return
@@ -200,7 +198,7 @@ def run_pipeline(
         geom, snap = run_stage(geom, stage, ctx, repairs, accumulated_issues)
         snapshots.append(snap)
         accumulated_issues = list(snap.issues)
-        if stage.exporters:
+        if stage.exporters or stage.reporters:
             run_checkpoint_exporters(geom, stage, snapshots, repairs, output_path, ctx)
 
     logger.warning("Pipeline %r: completed all stages, starting FINAL validation", profile.name)
@@ -226,14 +224,16 @@ def run_pipeline(
     )
 
     for exporter in profile.exporters:
-        # A declared capability that fails is fatal (see run_checkpoint_exporters).
-        if isinstance(exporter, SupportsPipelineResult):
-            exporter.set_pipeline_result(pipeline_result)
-
-        target = (
-            exporter.path_for(output_path) if isinstance(exporter, SupportsPathFor) else output_path
-        )
+        target = exporter.path_for(output_path)
         exporter.write(geom, target)
+        ctx.logger.info(
+            "[pipeline] wrote %s at %s",
+            target,
+            datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        )
+    for reporter in profile.reporters:
+        target = reporter.path_for(output_path)
+        reporter.write(pipeline_result, target)
         ctx.logger.info(
             "[pipeline] wrote %s at %s",
             target,

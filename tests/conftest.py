@@ -2,12 +2,13 @@
 
 Per-validator tests build small, isolated meshes in code (one defect each) so
 that a failing assertion points unambiguously at a single validator/repair.
-The one real-world file, ``tests/models/vert2.0.6.obj``, carries every defect
-kind at once and is reserved for the end-to-end smoke test.
+The one real-world file, ``tests/models/public/01_Apartment_Room/Apartment_Room.obj``,
+carries every defect kind at once and is reserved for the end-to-end smoke test.
 """
 
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
 
@@ -28,10 +29,52 @@ def models_dir() -> Path:
     return MODELS_DIR
 
 
+# --- Public model report coverage --------------------------------------------
+
+_COVERAGE_ATTR = "_public_model_coverage"
+# Git-ignored sink for the per-model coverage JSON (see .gitignore).
+COVERAGE_DIR = Path(__file__).parent.parent / "test-results"
+COVERAGE_FILE = COVERAGE_DIR / "public_model_coverage.json"
+
+
+@pytest.fixture
+def record_public_model_coverage(request):
+    """Return a callable that records one model's detected-issue counts."""
+
+    def _record(*, model: str, initial: dict[str, int], remaining: dict[str, int], match: bool):
+        rows = getattr(request.config, _COVERAGE_ATTR, None)
+        if rows is None:
+            rows = []
+            setattr(request.config, _COVERAGE_ATTR, rows)
+        rows.append({"model": model, "initial": initial, "remaining": remaining, "match": match})
+
+    return _record
+
+
+def pytest_terminal_summary(terminalreporter, exitstatus, config) -> None:
+    """Write the per-model issue-detection coverage to a git-ignored JSON file."""
+    coverage = getattr(config, _COVERAGE_ATTR, None)
+    if not coverage:
+        return
+
+    payload = {
+        row["model"]: {
+            "initial_issue_detected": row["initial"],
+            "remaining_issue_detected": row["remaining"],
+            "match_with_reference": row["match"],
+        }
+        for row in coverage
+    }
+
+    COVERAGE_DIR.mkdir(parents=True, exist_ok=True)
+    COVERAGE_FILE.write_text(json.dumps(payload, indent=2))
+    terminalreporter.write_line(f"public model coverage written to {COVERAGE_FILE}")
+
+
 @pytest.fixture
 def real_room_obj() -> Path:
     """The real, all-defects room used only for the end-to-end smoke test."""
-    path = MODELS_DIR / "vert2.0.6.obj"
+    path = MODELS_DIR / "public" / "01_Apartment_Room" / "Apartment_Room.obj"
     if not path.exists():
         pytest.skip(f"real geometry fixture missing: {path}")
     return path

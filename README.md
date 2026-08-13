@@ -1,13 +1,20 @@
-# geometry_pipeline
+# Geometry Validation & Repair Pipeline
 
-A detached geometry-processing pipeline for **CHORAS**. It imports room geometry
-from CAD formats, **validates** it, **repairs** common mesh defects, and
-**exports** solver-ready files (OBJ, Rhino 3DM, Gmsh `.geo`) together with a
-structured issue report.
+A Python package that runs a **geometry-processing pipeline**. It imports room
+geometry from CAD formats, **validates** it for common defects, **repairs**
+those defects, and **exports** solver-ready files (OBJ, Rhino 3DM, Gmsh `.geo`)
+together with a structured issue report.
+
+The defects it looks for are the ones that matter for **room-acoustics
+geometry**, and the main issues are analysed in terms of what **Gmsh** requires
+from a mesh (a valid, watertight, non-self-intersecting piecewise-linear
+complex): duplicate vertices, zero-area / collinear / small / non-planar faces,
+T-junctions, self-intersections, overlapping faces, boundary edges and possible
+holes.
 
 The pipeline is organised as **ports-and-adapters**: a small public facade wraps
 a registry-driven set of importers, validators, repairs, and exporters that are
-wired together by a *profile* (one profile per simulation method).
+wired together by a *profile*.
 
 ---
 
@@ -30,20 +37,27 @@ Key runtime dependencies (pinned in [pyproject.toml](pyproject.toml)): `numpy`,
 `scipy`, `shapely`, `rhino3dm`, `ezdxf`, `trimesh`, `numpy-stl`, `gmsh`,
 `meshio`.
 
-> **Native cavity detector (optional).** Cavity detection has a fast C++ kernel
-> under `src/geometry_pipeline/cavity_detection/_native/`. The Docker image
-> compiles it and sets `VOLUME_DETECTOR_BIN`. Without the binary the pipeline
-> falls back to the pure-Python voxel detector — no action needed for local use.
+> **Native cavity detector (required for cavity detection).** Cavity detection
+> uses a C++ kernel under `src/geometry_pipeline/cavity_detection/_native/`. The
+> Docker image compiles it and sets `VOLUME_DETECTOR_BIN`. Running with
+> `detect_cavities=True` **requires** this binary — if it is missing, cavity
+> detection raises a `GeometryError` (there is no automatic fallback). Build the
+> native kernel (or set `VOLUME_DETECTOR_BIN`) to enable cavity detection, or
+> leave `detect_cavities=False` to skip it. A pure-Python voxel detector exists
+> but is only used for testing via an explicit `detection_mode="voxel"`.
 
 ---
 
 ## Usage
 
 The **only** supported public surface is the facade in
-`geometry_pipeline.api` (everything else is an implementation detail).
+`geometry_pipeline` / `geometry_pipeline.api` (everything else is an
+implementation detail). It re-exports `repair_geometry`, `process_geometry`,
+`list_issue_kinds`, `GeometryResult`, `IssueInfo`, `GeometryError` and
+`SUPPORTED_INPUTS`.
 
-Supported input formats: **`.obj`**, **`.3dm`**, **`.dxf`**
-(`geometry_pipeline.SUPPORTED_INPUTS`).
+Supported input format: **`.obj`** (`geometry_pipeline.SUPPORTED_INPUTS`).
+Rhino `.3dm` and Gmsh `.geo` are **output** formats only.
 
 ### Repair + export
 
@@ -51,27 +65,101 @@ Supported input formats: **`.obj`**, **`.3dm`**, **`.dxf`**
 from geometry_pipeline import repair_geometry
 
 result = repair_geometry(
-    input_path="room.3dm",
+    input_path="room.obj",
     output_dir="out/",
     volume_name="RoomVolume",
     detect_cavities=True,  # emit one Gmsh volume per enclosed region
 )
 
-print(result.issue_count)  # total detected issues
+print(result.issue_count)  # total detected issues (initial pass)
 print(result.outputs)  # {"obj": "out/room.obj", "geo": "out/room.geo", ...}
 print(result.report)  # {"pre": {...}, "post": {...}, "repairs": {...}}
 ```
 
+`repair_geometry` runs the merged default profile in a single pass and returns a
+`GeometryResult` describing the *initial* detection. Its sibling
+`process_geometry` runs the same pipeline but reports the *repaired* (remaining)
+state and accepts an optional `on_checkpoint` callback that fires once at the
+inspect checkpoint (after T-junctions are fixed, before intersection repair) so
+callers can persist early progress:
+
+```python
+from geometry_pipeline import process_geometry
+
+result = process_geometry(
+    input_path="room.obj",
+    output_dir="out/",
+    on_checkpoint=lambda cp: print(cp["stage"], cp["issue_count"]),
+)
+```
+
 Both functions return a `GeometryResult`:
 
-| Field          | Meaning                                                        |
+| Field          | Meaning                                                       |
 | -------------- | ------------------------------------------------------------- |
 | `outputs`      | `dict[str, str]` of exporter name → written file path         |
-| `issue_report` | frontend-shaped issue dict (from the *initial* detection pass) |
+| `issue_report` | frontend-shaped issue dict (mapping of issue-kind → entries)  |
 | `report`       | `{pre, post, repairs}` snapshot across the run                |
 | `issue_count`  | total number of detected issues                               |
 
 All failures are raised as a single `GeometryError`.
+
+### Listing what the pipeline can detect
+
+```python
+from geometry_pipeline import list_issue_kinds
+
+for info in list_issue_kinds():
+    print(info.kind, "-", "repairable" if info.repairable else "detect-only")
+```
+
+Each `IssueInfo` carries the issue `kind`, a short `description`, and whether a
+repair step in the pipeline can fix it. `repairable` is derived dynamically from
+the `handles` sets declared by the repair steps, so it never drifts from the
+actual implementation.
+
+---
+
+## Pipeline overview
+
+```mermaid
+flowchart TD
+    subgraph PROFILE["SimulationProfile (profiles/default.py)"]
+        direction TB
+        PV["Validators<br/>(ordered)"]
+        PS["Repair stages<br/>(ordered)"]
+        PX["Exporters<br/>(registry)"]
+    end
+
+    A[".obj input"] --> B["Importer<br/>(io/importers)"]
+    B --> C["Geometry IR<br/>(core/ir: Mesh, Face, Vertex)"]
+    C --> R(["Runner<br/>(pipeline/runner.py)"])
+    PROFILE -.wires.-> R
+
+    R --> D["Validate<br/>(read-only detection)"]
+    D --> E["Repairs<br/>(mutation steps)"]
+    E --> F{{"Inspect checkpoint<br/>after T-junctions,<br/>before intersections"}}
+    F -->|on_checkpoint callback| G["Persist early progress"]
+    F --> H["Intersection & remaining repairs"]
+    H --> I{"detect_cavities?"}
+    I -->|yes| J["Cavity detection<br/>(Python / native C++)"]
+    I -->|no| K["Export<br/>(io/exporters)"]
+    J --> K
+    K --> L["OBJ"]
+    K --> M["Rhino 3DM"]
+    K --> N["Gmsh .geo"]
+    K --> O["Issue report<br/>(reporting/)"]
+    L --> P["GeometryResult"]
+    M --> P
+    N --> P
+    O --> P
+```
+
+The **profile** (`profiles/default.py`) is the single source of truth for *what*
+runs and *in what order*: it holds the ordered validators, the repair stages
+(including the inspect checkpoint), and the exporter registry. The **runner**
+(`pipeline/runner.py`) is generic — it just executes whatever profile it is
+given against the imported geometry in a single merged pass.
 
 ---
 
@@ -82,19 +170,21 @@ geometry-pipeline/
 ├─ pyproject.toml              # packaging, deps, pytest config
 ├─ Dockerfile                  # multi-stage build (compiles native kernel)
 ├─ src/geometry_pipeline/
-│  ├─ api.py                   # PUBLIC facade: repair_geometry / process_geometry
+│  ├─ api.py                   # PUBLIC facade: repair_geometry / process_geometry / list_issue_kinds
 │  ├─ __init__.py              # re-exports the facade
 │  ├─ py.typed                 # PEP 561 type marker
 │  ├─ core/                    # domain layer (stdlib only)
-│  │  ├─ ir.py                 #   geometry IR: Mesh, BRep, Face, Cavity, …
+│  │  ├─ ir.py                 #   geometry IR: Mesh, Face, Vertex, Cavity, …
 │  │  ├─ issues.py             #   Issue, IssueKind, DetectionStage
 │  │  ├─ profile.py            #   SimulationProfile + Stage dataclasses
 │  │  ├─ tolerances.py         #   numeric thresholds / caps
 │  │  ├─ context.py            #   per-run Context (tolerances, logger)
-│  │  └─ report.py             #   PipelineResult / RepairResult
+│  │  ├─ report.py             #   ValidationSnapshot / RepairResult / RepairReport / PipelineResult
+│  │  ├─ diff.py               #   SnapshotDiff: compare two validation snapshots by Issue.id
+│  │  └─ jsonable.py           #   coerce numpy scalars/arrays → native JSON types
 │  ├─ io/                      # adapters (registry-based)
 │  │  ├─ registry.py           #   ImporterRegistry / ExporterRegistry
-│  │  ├─ importers/            #   obj, rhino (3dm), dxf
+│  │  ├─ importers/            #   obj
 │  │  └─ exporters/            #   obj, 3dm, gmsh .geo
 │  ├─ validators/              # detection (read-only)
 │  │  ├─ base.py               #   Validator protocol + BaseValidator
@@ -102,11 +192,10 @@ geometry-pipeline/
 │  ├─ repairs/                 # mutation steps
 │  │  ├─ base.py               #   RepairStep protocol + BaseRepair
 │  │  └─ mesh/                 #   mesh-specific repairs + _common helpers
-│  ├─ profiles/                # explicit stage wiring, one per solver
-│  │  ├─ wave_based.py         #   FEM/FDTD profile (full + inspect)
-│  │  └─ ray_tracing.py
+│  ├─ profiles/                # explicit stage wiring
+│  │  └─ default.py            #   default profile (single merged pass)
 │  ├─ pipeline/runner.py       # executes a profile against geometry
-│  ├─ conversion/              # IR ↔ IR converters (e.g. brep → mesh)
+│  ├─ conversion/              # IR ↔ IR converters (registry; add per-kind converters here)
 │  ├─ cavity_detection/        # enclosed-region detection (Python + native C++)
 │  ├─ geometry_math/           # pure geometric predicates / triangulation
 │  └─ reporting/               # Issue → frontend JSON translation + writers
@@ -114,113 +203,54 @@ geometry-pipeline/
 ```
 
 **Layering rule:** `core/` depends on nothing but the stdlib. Validators and
-repairs are split by **geometry kind** (currently only `mesh/`); add a
-`brep/` sibling when you implement Brep-native steps. Each validator/repair
-declares `accepts = {"mesh"}`, and a profile's `__post_init__` rejects any
-component whose `accepts` doesn't match its `target_ir.kind`.
+repairs are split by **geometry kind** (currently only `mesh/`). Each
+validator/repair declares `accepts = {"mesh"}`, and a profile's `__post_init__`
+rejects any component whose `accepts` doesn't match its `target_ir.kind`.
 
 ---
 
-## Adding a new profile
+## Testing
 
-A **profile** (`SimulationProfile`) is the explicit wiring of validators,
-repair stages, and exporters for one simulation method. There is no registry —
-you build and return the object from a factory function.
-
-A profile has five moving parts:
-
-- `pre_validators` — detection on the raw input (before any repair)
-- `stages` — ordered list of `Stage(repairs=[...], post_validators=[...])`
-- `final_validators` — detection after all stages
-- `exporters` — what gets written to disk
-- `tolerances` — numeric thresholds for this run
-
-### Example: `examples/my_profile.py`
-
-```python
-from geometry_pipeline.core.ir import Mesh
-from geometry_pipeline.core.profile import SimulationProfile, Stage
-from geometry_pipeline.core.tolerances import Tolerances
-from geometry_pipeline.io.registry import ExporterRegistry
-
-# Validators / repairs live under the per-kind subpackage.
-from geometry_pipeline.validators.mesh.duplicate_vertices import DuplicateVerticesValidator
-from geometry_pipeline.validators.mesh.degenerate_faces import ZeroAreaFaceValidator
-from geometry_pipeline.repairs.mesh.deduplicate_vertices import DeduplicateVerticesRepair
-from geometry_pipeline.repairs.mesh.remove_degenerate_faces import RemoveZeroAreaFaceRepair
-
-
-def my_profile() -> SimulationProfile:
-    """A minimal clean-up profile: dedupe + drop degenerate faces, then export OBJ."""
-    return SimulationProfile(
-        name="my_profile",
-        target_ir=Mesh,  # this profile operates on meshes
-        pre_validators=[
-            DuplicateVerticesValidator(),
-            ZeroAreaFaceValidator(),
-        ],
-        stages=[
-            Stage(
-                name="cleanup",
-                repairs=[
-                    DeduplicateVerticesRepair(),
-                    RemoveZeroAreaFaceRepair(),
-                ],
-                # re-detect after the repairs in this stage:
-                post_validators=[ZeroAreaFaceValidator()],
-            ),
-        ],
-        final_validators=[ZeroAreaFaceValidator()],
-        exporters=[
-            ExporterRegistry.get("obj", Mesh.kind),
-        ],
-        tolerances=Tolerances(),
-    )
-```
-
-Run it through the pipeline directly:
-
-```python
-import logging
-from pathlib import Path
-from geometry_pipeline.core.context import Context
-from geometry_pipeline.core.tolerances import Tolerances
-from geometry_pipeline.io.registry import ImporterRegistry
-from geometry_pipeline.pipeline.runner import run_pipeline
-from examples.my_profile import my_profile
-
-geom = ImporterRegistry.for_extension(".obj").load(Path("room.obj"))
-profile = my_profile()
-ctx = Context(
-    tolerances=Tolerances(), logger=logging.getLogger("choras_geometry"), profile_name=profile.name
-)
-result = run_pipeline(geom, profile, Path("out/room"), ctx)
-```
-
-**Tips**
-
-- **Stage order matters.** Detectors only produce meaningful results once their
-  preconditions are repaired (e.g. T-junctions must be fixed before
-  intersection/hole detection — see `profiles/wave_based.py`).
-- **Match the IR kind.** Every component must `accept` the profile's
-  `target_ir.kind`, or `SimulationProfile.__post_init__` raises a `ValueError`
-  listing the mismatches.
-- **Reuse exporters via the registry:** `ExporterRegistry.get("obj", Mesh.kind)`.
-- To expose the profile through the facade, add a wrapper in
-  `geometry_pipeline/api.py` (mirroring `repair_geometry`).
-
----
-
-## Development
+Install the dev extras (`pip install -e ".[dev]"`), then from the
+`geometry-pipeline/` folder run the full suite:
 
 ```powershell
-# run the test suite (scoped to this package)
-python -m pytest tests/ -q
-
-# type-check and lint (with the dev extras installed)
-mypy src/geometry_pipeline
-ruff check src
+python -m pytest
 ```
+
+### Public model report regression test
+
+`tests/integration/test_public_model_reports.py` runs the pipeline over every
+committed room model under `tests/models/public/NN_<name>/` and asserts the
+freshly produced `<name>_inspect_issue.json` and `<name>_remaining_issue.json`
+reports match the reference reports in that folder. Run it on its own with:
+
+```powershell
+python -m pytest tests/integration/test_public_model_reports.py -v
+```
+
+After the run it writes a per-model coverage report (initial vs. remaining
+issues detected in the fresh run, plus whether they matched the reference) to a
+git-ignored file at `test-results/public_model_coverage.json`:
+
+```json
+{
+  "01_Apartment_Room": {
+    "initial_issue_detected": { "duplicate_vertex": 2, "boundary_edge": 17, "...": 0 },
+    "remaining_issue_detected": { "duplicate_vertex": 0, "boundary_edge": 16, "...": 0 },
+    "match_with_reference": true
+  }
+}
+```
+
+Adding a new `02_<name>/` folder (its `.obj` plus the two reference JSON files)
+is picked up automatically as an additional case — no code changes required.
+
+## Contributing & development
+
+To extend the pipeline (adding a validator, repair, or exporter), understand the
+IR model, or run the tests / linters, see the
+[contribution & development guide](CONTRIBUTING.new.md).
 
 ## License
 

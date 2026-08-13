@@ -26,3 +26,9 @@ bin/
 .venv/
 venv/
 env/
+
+# Private, non-committed test geometry
+tests/models/private/
+
+# Test result artifacts (e.g. public model coverage JSON)
+test-results/

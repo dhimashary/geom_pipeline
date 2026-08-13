@@ -1,15 +1,10 @@
 from __future__ import annotations
 
 import json
-import logging
 from pathlib import Path
-from typing import Any
 
 from geometry_pipeline.core.jsonable import to_jsonable
 from geometry_pipeline.core.report import PipelineResult
-
-# Module logger
-logger = logging.getLogger(__name__)
 
 
 class JsonReportWriter:
@@ -25,9 +20,9 @@ class JsonReportWriter:
         profile's ``final_validators``)
       - ``"composite"`` — per-kind "last detection wins" across all stages
 
-    Unlike the geometry exporters in `io.exporters`, this writer ignores the
-    `geom` argument and instead serializes the full `PipelineResult`, which it
-    receives via `set_pipeline_result`.
+    Unlike the geometry exporters in `io.exporters`, this writer implements the
+    `ReportWriter` port: its `write` consumes the `PipelineResult` directly
+    (it never touches geometry).
     """
 
     def __init__(
@@ -46,23 +41,16 @@ class JsonReportWriter:
         self.report_suffix = report_suffix
         self.issue_source = issue_source
         self.write_report = write_report
-        self._result: PipelineResult | None = None
-
-    def set_pipeline_result(self, result: PipelineResult) -> None:
-        self._result = result
 
     def path_for(self, base: Path) -> Path:
-        # receive base path (folder/stem) as the canonical base; exporter will
-        # append its own suffixes when writing files.
+        # receive base path (folder/stem) as the canonical base; the writer
+        # appends its own suffixes when writing files.
         return Path(base)
 
-    def write(self, geom: Any, path: Path) -> None:
+    def write(self, result: PipelineResult, path: Path) -> None:
         base = Path(path)
         stem = base.name
         parent = base.parent
-        if self._result is None:
-            logger.debug("No pipeline result to write for %s", base)
-            return
 
         # Import translators lazily to avoid circular imports at module import time
         try:
@@ -76,12 +64,12 @@ class JsonReportWriter:
                 return {"pre": {}, "post": {}, "repairs": []}
 
         if self.issue_source == "composite":
-            issues = self._result.composite_issues
+            issues = result.composite_issues
         elif self.issue_source == "final":
-            snap = getattr(self._result, "final", None)
+            snap = getattr(result, "final", None)
             issues = snap.issues if snap else None
         else:  # "initial"
-            snap = getattr(self._result, "initial", None)
+            snap = getattr(result, "initial", None)
             issues = snap.issues if snap else None
         issue_report = kind_dict(issues)
 
@@ -90,7 +78,7 @@ class JsonReportWriter:
         issue_path.write_text(json.dumps(to_jsonable(issue_report), indent=2, default=str))
 
         if self.write_report:
-            report = snapshot_report(self._result)
+            report = snapshot_report(result)
             report_path = parent / f"{stem}{self.report_suffix}"
             report_path.write_text(json.dumps(to_jsonable(report), indent=2, default=str))
 

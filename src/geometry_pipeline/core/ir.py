@@ -46,28 +46,28 @@ class Geometry(Protocol):
 
 
 class Exporter(Protocol):
-    """Port for exporters: write the given geometry to ``path``.
+    """Port for geometry sinks: write the given geometry to ``path``.
 
     Defined here in the core domain so that ``core`` (e.g. ``profile``) and
     ``io`` can both depend on it without ``core`` importing ``io``. Concrete
     exporters live under ``io/exporters`` and implement this protocol.
+    ``path_for`` lets a sink derive its own filename from a base path.
     """
 
+    def path_for(self, base: Path) -> Path: ...
     def write(self, geom: Geometry, path: Path) -> None: ...
 
 
-@runtime_checkable
-class SupportsPathFor(Protocol):
-    """Capability: an exporter that resolves its own output path from a base."""
+class ReportWriter(Protocol):
+    """Port for result sinks: serialize a ``PipelineResult`` to ``path``.
+
+    Unlike ``Exporter`` this consumes the run's result (issues + snapshots)
+    rather than the geometry, so it is a distinct port. Concrete writers live
+    under ``reporting`` and implement this protocol.
+    """
 
     def path_for(self, base: Path) -> Path: ...
-
-
-@runtime_checkable
-class SupportsPipelineResult(Protocol):
-    """Capability: an exporter that needs the pipeline result before ``write``."""
-
-    def set_pipeline_result(self, result: PipelineResult) -> None: ...
+    def write(self, result: PipelineResult, path: Path) -> None: ...
 
 
 @dataclass

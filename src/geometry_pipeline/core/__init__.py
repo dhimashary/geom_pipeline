@@ -9,8 +9,7 @@ from geometry_pipeline.core.ir import (
     Geometry,
     MaterialInfo,
     Mesh,
-    SupportsPathFor,
-    SupportsPipelineResult,
+    ReportWriter,
     Vertex,
 )
 from geometry_pipeline.core.issues import DetectionStage, Issue, IssueKind
@@ -37,11 +36,10 @@ __all__ = [
     "PipelineResult",
     "RepairReport",
     "RepairResult",
+    "ReportWriter",
     "SimulationProfile",
     "SnapshotDiff",
     "Stage",
-    "SupportsPathFor",
-    "SupportsPipelineResult",
     "Tolerances",
     "ValidationSnapshot",
     "Vertex",

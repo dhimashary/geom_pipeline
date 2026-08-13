@@ -2,9 +2,9 @@
 
 Unlike the synthetic per-validator/per-repair unit tests, this drives the full
 public pipeline (import -> validate -> repair -> export) over
-``tests/models/vert2.0.6.obj`` and asserts the run completes, detects defects,
-and writes output artifacts. Native cavity detection is disabled so the test
-does not depend on the compiled C++ kernel.
+``tests/models/public/01_Apartment_Room/Apartment_Room.obj`` and asserts
+the run completes, detects defects, and writes output artifacts. Native cavity
+detection is disabled so the test does not depend on the compiled C++ kernel.
 """
 
 from __future__ import annotations
@@ -82,7 +82,7 @@ def test_merged_fires_checkpoint_once_with_initial_issues(merged_run):
 def test_merged_emits_checkpoint_and_repaired_artifacts(merged_run):
     _, _, tmp_path = merged_run
     names = {p.name for p in tmp_path.rglob("*") if p.is_file()}
-    stem = "vert2.0.6"
+    stem = "Apartment_Room"
     # inspect checkpoint (initial 3dm/zip is produced by the backend
     # map_to_3dm_and_geo flow, not the pipeline)
     assert f"{stem}.geo" in names

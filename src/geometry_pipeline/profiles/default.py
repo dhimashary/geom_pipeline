@@ -58,6 +58,7 @@ def _default_stages(
     intersect,
     *,
     checkpoint_exporters=(),
+    checkpoint_reporters=(),
 ) -> list[Stage]:
     """Single source of truth for the default stage order.
 
@@ -65,8 +66,9 @@ def _default_stages(
     after dedupe; intersections only meaningful after the tj fix).
 
     The ``t_junctions`` stage is the INSPECT CHECKPOINT. Its
-    ``checkpoint_exporters`` emit ``<stem>.geo`` + ``<stem>_inspect_issue.json``
-    on the tjunc-fixed, pre-intersection-repair mesh. Detectors are placed so
+    ``checkpoint_exporters`` emit ``<stem>.geo`` and its
+    ``checkpoint_reporters`` emit ``<stem>_inspect_issue.json`` on the
+    tjunc-fixed, pre-intersection-repair mesh. Detectors are placed so
     the interim ``composite_issues`` matches the historical inspect report
     exactly: ``tjunc`` *before* the fix (``orient`` post-validator), everything
     else *after* it (``t_junctions`` post-validators).
@@ -102,6 +104,7 @@ def _default_stages(
                 PossibleHolesValidator(),
             ],
             exporters=list(checkpoint_exporters),
+            reporters=list(checkpoint_reporters),
             checkpoint=True,
         ),
         Stage(
@@ -136,17 +139,26 @@ def _default_final_validators(tjunc, intersect) -> list:
 
 
 def _inspect_checkpoint_exporters(*, detect_cavities: bool = True) -> list:
-    """Exporters fired at the ``t_junctions`` checkpoint (initial geo + report).
+    """Geometry sink fired at the ``t_junctions`` checkpoint (initial geo).
 
     ``GmshGeoExporter(repaired=False)`` keeps today's inspect defaults
-    (``detect_cavities=True``) and writes ``<stem>.geo``; the writer emits
-    ``<stem>_inspect_issue.json`` from the interim ``composite_issues`` and
-    skips the ``_report.json`` artifact. ``detect_cavities`` is threaded so a
-    caller can disable the native cavity kernel (e.g. tests/CI); production
-    keeps it ``True`` so the checkpoint geo matches the historical inspect run.
+    (``detect_cavities=True``) and writes ``<stem>.geo``. ``detect_cavities`` is
+    threaded so a caller can disable the native cavity kernel (e.g. tests/CI);
+    production keeps it ``True`` so the checkpoint geo matches the historical
+    inspect run.
     """
     return [
         ExporterRegistry.get("geo", Mesh.kind, repaired=False, detect_cavities=detect_cavities),
+    ]
+
+
+def _inspect_checkpoint_reporters() -> list:
+    """Result sink fired at the ``t_junctions`` checkpoint (inspect issue json).
+
+    The writer emits ``<stem>_inspect_issue.json`` from the interim
+    ``composite_issues`` and skips the ``_report.json`` artifact.
+    """
+    return [
         JsonReportWriter(
             issue_suffix="_inspect_issue.json",
             issue_source="composite",
@@ -159,8 +171,6 @@ def default_profile(
     volume_name: str = "RoomVolume",
     *,
     detect_cavities: bool = False,
-    cavity_pitch: float = 0.05,
-    cavity_closing_iterations: int = 0,
 ) -> SimulationProfile:
     """Merged default profile: one pass emits both the inspect and the
     fully-repaired artifacts.
@@ -189,6 +199,7 @@ def default_profile(
             tjunc,
             intersect,
             checkpoint_exporters=_inspect_checkpoint_exporters(detect_cavities=detect_cavities),
+            checkpoint_reporters=_inspect_checkpoint_reporters(),
         ),
         final_validators=_default_final_validators(tjunc, intersect),
         exporters=[
@@ -197,15 +208,18 @@ def default_profile(
             # and converts it to a Rhino 3DM using the existing converter.
             # Placed after the OBJ exporter so the .obj file is available on disk.
             ExporterRegistry.get("3dm", Mesh.kind),
+            # repaired=True names the output <stem>_repaired.geo AND makes it read
+            # the matching <stem>_repaired.3dm for material mapping (vs the plain
+            # <stem>.geo / <stem>.3dm the inspect checkpoint uses).
             ExporterRegistry.get(
                 "geo",
                 Mesh.kind,
                 volume_name=volume_name,
                 repaired=True,
                 detect_cavities=detect_cavities,
-                cavity_pitch=cavity_pitch,
-                cavity_closing_iterations=cavity_closing_iterations,
             ),
+        ],
+        reporters=[
             JsonReportWriter(issue_suffix="_remaining_issue.json", issue_source="final"),
         ],
         tolerances=Tolerances(),

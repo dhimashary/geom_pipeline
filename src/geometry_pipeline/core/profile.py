@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from geometry_pipeline.core.ir import Exporter, Geometry
+from geometry_pipeline.core.ir import Exporter, Geometry, ReportWriter
 from geometry_pipeline.core.issues import IssueKind
 from geometry_pipeline.core.tolerances import Tolerances
 from geometry_pipeline.repairs.base import RepairStep
@@ -21,6 +21,9 @@ class Stage:
     single run emit intermediate artifacts (e.g. the raw or inspect bundle)
     without a second pass. Empty by default, so ordinary stages are unaffected.
 
+    ``reporters`` are the result-sink counterpart: they serialize the interim
+    ``PipelineResult`` (issues/snapshots) at this point rather than geometry.
+
     ``checkpoint`` additionally fires the ``on_checkpoint`` callback (from
     ``ctx.extras``) after the exporters run, so callers can react mid-pipeline
     (persist rows, report progress). An export point is not necessarily a
@@ -33,6 +36,7 @@ class Stage:
     post_validators: list[Validator] = field(default_factory=list)
     fail_fast_on: set[IssueKind] = field(default_factory=set)
     exporters: list[Exporter] = field(default_factory=list)
+    reporters: list[ReportWriter] = field(default_factory=list)
     checkpoint: bool = False
 
 
@@ -44,6 +48,7 @@ class SimulationProfile:
     stages: list[Stage]
     final_validators: list[Validator]
     exporters: list[Exporter]
+    reporters: list[ReportWriter]
     tolerances: Tolerances
 
     def __post_init__(self) -> None:
