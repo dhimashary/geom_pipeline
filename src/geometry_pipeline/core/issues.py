@@ -35,8 +35,9 @@ class DetectionStage(str, Enum):
 class Issue:
     """A defect detected by a validator.
 
-    `id` is a stable content hash of (kind, payload) so that the *same*
-    physical defect produces the *same* id across snapshots.
+    `id` is a stable content hash of (kind, geometry) — derived from the
+    issue's `elements` when present — so the *same* physical defect produces
+    the *same* id across snapshots.
     """
 
     id: str
@@ -56,13 +57,19 @@ class Issue:
         # Coerce numpy scalars/arrays to JSON-native builtins so the stored
         # payload (and the id hash derived from it) are stable and serialise
         # cleanly regardless of the numpy version.
-        payload = to_jsonable(payload or {})
-        key = json.dumps([kind.value, payload], sort_keys=True, default=str)
+        data: dict = to_jsonable(payload or {})
+        # Derive the id from the intrinsic geometry (`elements`) when present so
+        # the same physical defect keeps a stable id across snapshots, even when
+        # repair shifts face indices or nudges derived metrics (max_dim,
+        # overlap_area, ...). Fall back to the full payload for issues that
+        # carry no elements (e.g. capped-list summary markers).
+        id_source = data.get("elements") or data
+        key = json.dumps([kind.value, id_source], sort_keys=True, default=str)
         issue_id = hashlib.sha1(key.encode("utf-8")).hexdigest()[:12]
         return cls(
             id=issue_id,
             kind=kind,
             stage=stage,
             stage_name=stage_name,
-            payload=payload,  # type: ignore[arg-type]
+            payload=data,
         )
