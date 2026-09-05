@@ -9,6 +9,10 @@ from geometry_pipeline.geometry_math.geometry_math import (
     sub,
     uedge,
 )
+from geometry_pipeline.geometry_math.mesh_ops import (
+    clean_face_loop,
+    deduplicate_vertices,
+)
 from geometry_pipeline.geometry_math.predicates import (
     classify_face_degeneracy,
     classify_face_planarity_m,
@@ -28,4 +32,6 @@ __all__ = [
     "classify_face_degeneracy",
     "classify_face_planarity_m",
     "planarity_deviation_m",
+    "clean_face_loop",
+    "deduplicate_vertices",
 ]

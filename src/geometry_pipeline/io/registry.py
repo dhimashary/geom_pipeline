@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import logging
+
 from geometry_pipeline.core.ir import Exporter
 from geometry_pipeline.io.importers.base import Importer
+
+logger = logging.getLogger(__name__)
 
 
 class ImporterRegistry:
@@ -45,9 +49,13 @@ class ImporterRegistry:
         """
         if cls._by_ext:
             return
+        # To add a new format: import its Importer here inside a try/except,
+        # then add it to the tuple below. The extension(s) it handles come
+        # from the class's `extensions` attribute, so no key mapping is needed.
         try:
             from geometry_pipeline.io.importers.obj import ObjImporter
         except Exception:
+            logger.warning("OBJ importer unavailable", exc_info=True)
             ObjImporter = None  # type: ignore[assignment,misc]
 
         for imp in (ObjImporter,):

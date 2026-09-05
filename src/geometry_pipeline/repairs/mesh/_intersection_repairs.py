@@ -29,12 +29,12 @@ from geometry_pipeline.geometry_math.geometry_math import (
     uedge,
     unit,
 )
+from geometry_pipeline.geometry_math.mesh_ops import clean_face_loop
 from geometry_pipeline.geometry_math.predicates import (
     classify_face_degeneracy,
     planarity_deviation_m,
 )
 from geometry_pipeline.geometry_math.triangulation import triangulate_face_cdt_shapely
-from geometry_pipeline.io.importers.obj import clean_face_loop
 from geometry_pipeline.repairs.mesh._common import (
     _endpoint_vids_from_edge_t,
     compact_vertices_and_remove_unused,

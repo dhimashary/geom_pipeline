@@ -1,7 +1,7 @@
 """Merge vertices that coincide within `tolerances.vertex_merge`.
 
 In the legacy code this is the very first step on the raw OBJ vertex list
-(see `parse_obj_file` then `deduplicate_vertices`). In the new pipeline
+(see `_parse_obj_file` then `deduplicate_vertices`). In the new pipeline
 the importer already produces a `Mesh`; this repair re-runs the same merge
 on Mesh vertices so it can also be invoked mid-pipeline if a later step
 introduces near-duplicates.
@@ -15,7 +15,7 @@ from geometry_pipeline.core.context import Context
 from geometry_pipeline.core.ir import Face, Mesh, Vertex
 from geometry_pipeline.core.issues import Issue, IssueKind
 from geometry_pipeline.core.report import RepairResult
-from geometry_pipeline.io.importers.obj import deduplicate_vertices
+from geometry_pipeline.geometry_math.mesh_ops import deduplicate_vertices
 from geometry_pipeline.repairs.base import BaseRepair
 
 

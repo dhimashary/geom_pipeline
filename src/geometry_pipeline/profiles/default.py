@@ -60,25 +60,19 @@ def _default_stages(
     checkpoint_exporters=(),
     checkpoint_reporters=(),
 ) -> list[Stage]:
-    """Single source of truth for the default stage order.
+    """Build the ordered repair/detect stages (the default execution order).
 
-    The order is what makes detection meaningful (T-junctions only detectable
-    after dedupe; intersections only meaningful after the tj fix).
+    The order encodes detection dependencies, so it is not arbitrary:
+    T-junctions are only detectable after deduplication, and intersections are
+    only meaningful once T-junctions are fixed.
 
-    The ``t_junctions`` stage is the INSPECT CHECKPOINT. Its
-    ``checkpoint_exporters`` emit ``<stem>.geo`` and its
-    ``checkpoint_reporters`` emit ``<stem>_inspect_issue.json`` on the
-    tjunc-fixed, pre-intersection-repair mesh. Detectors are placed so
-    the interim ``composite_issues`` matches the historical inspect report
-    exactly: ``tjunc`` *before* the fix (``orient`` post-validator), everything
-    else *after* it (``t_junctions`` post-validators).
-
-    Note: the initial ``<stem>.3dm``/``.zip`` bundle is NOT produced here — it
-    is created by the backend ``map_to_3dm_and_geo`` (model-creation flow),
-    which also writes the ``File`` row and ``Geometry.outputModelId`` the
-    frontend depends on. The pipeline only writes files, so reproducing it here
-    would drop that DB linkage and overwrite the bundle with a different
-    converter.
+    The ``t_junctions`` stage doubles as the INSPECT CHECKPOINT: after the real
+    T-junction fix but before intersection repair, its ``checkpoint_exporters``
+    write ``<stem>.geo`` and its ``checkpoint_reporters`` write
+    ``<stem>_inspect_issue.json``. Detector placement makes the interim
+    ``composite_issues`` reproduce the inspect report exactly — ``tjunc`` is
+    measured *before* the fix (the ``orient`` post-validator) and every other
+    detector *after* it (the ``t_junctions`` post-validators).
     """
     stages = [
         Stage(name="deduplication", repairs=[DeduplicateVerticesRepair()]),  # type: ignore[list-item]

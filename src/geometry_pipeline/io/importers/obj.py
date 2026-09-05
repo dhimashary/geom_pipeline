@@ -1,8 +1,8 @@
 """OBJ importer -> Mesh.
 
-Wraps the legacy `parse_obj_file` + `process_and_instantiate_faces`
+Wraps the legacy `_parse_obj_file` + `_process_and_instantiate_faces`
 sequence. The resulting `Mesh` is in IR coordinates (Z-up) — the
-SketchUp/Y-up flip is performed by `parse_obj_file` itself (tech-debt #6).
+SketchUp/Y-up flip is performed by `_parse_obj_file` itself (tech-debt #6).
 """
 
 from __future__ import annotations
@@ -11,9 +11,8 @@ import logging
 from pathlib import Path
 from typing import ClassVar, Dict, List, Optional, Tuple
 
-import rhino3dm
-
 from geometry_pipeline.core.ir import Face, Mesh, Vertex
+from geometry_pipeline.geometry_math.mesh_ops import clean_face_loop
 
 logger = logging.getLogger(__name__)
 
@@ -55,44 +54,6 @@ def _parse_obj_file(
     return vertices, raw_faces, face_groups, face_group_materials
 
 
-def _deduplicate_vertices(
-    vertices: List[Tuple[float, float, float]],
-    tol: float = 1e-2,
-) -> Tuple[List[Tuple[float, float, float]], Dict[int, int]]:
-    unique_vertices: List[Tuple[float, float, float]] = []
-    orig_to_unique: Dict[int, int] = {}
-
-    for i, v in enumerate(vertices, start=1):
-        found = None
-
-        for j, uv in enumerate(unique_vertices, start=1):
-            if abs(uv[0] - v[0]) < tol and abs(uv[1] - v[1]) < tol and abs(uv[2] - v[2]) < tol:
-                found = j
-                break
-        if found is None:
-            unique_vertices.append(v)
-            orig_to_unique[i] = len(unique_vertices)
-        else:
-            orig_to_unique[i] = found
-    return unique_vertices, orig_to_unique
-
-
-def _clean_face_loop(verts: List[int]) -> List[int]:
-    if not verts:
-        return verts
-
-    cleaned = [verts[0]]
-
-    for v in verts[1:]:
-        if v != cleaned[-1]:
-            cleaned.append(v)
-
-    if len(cleaned) >= 2 and cleaned[0] == cleaned[-1]:
-        cleaned.pop()
-
-    return cleaned
-
-
 def _process_and_instantiate_faces(
     raw_faces: List[List[int]],
     face_groups: List[str],
@@ -116,7 +77,7 @@ def _process_and_instantiate_faces(
         else:
             mat = "unknown"
         mapped = [orig_to_unique[i] for i in raw_face]
-        mapped = _clean_face_loop(mapped)
+        mapped = clean_face_loop(mapped)
 
         sub_faces = [mapped]
 
@@ -128,22 +89,6 @@ def _process_and_instantiate_faces(
     return faces
 
 
-def _extract_rhino_materials(rhino3dm_path: str) -> List[str]:
-    """Extract per-mesh `material_name` user strings from a Rhino 3DM file."""
-
-    model = rhino3dm.File3dm.Read(str(Path(rhino3dm_path)))
-    if model is None:
-        return []
-
-    materials: List[str] = []
-    for obj in model.Objects:  # type: ignore[attr-defined]
-        if isinstance(obj.Geometry, rhino3dm.Mesh):
-            name = obj.Geometry.GetUserString("material_name")  # type: ignore[attr-defined]
-            materials.append(name or "unknown")
-
-    return materials
-
-
 class ObjImporter:
     extensions: ClassVar[tuple[str, ...]] = (".obj",)
 
@@ -151,7 +96,7 @@ class ObjImporter:
         path_str = str(path)
         vertices, raw_faces, face_groups, face_group_materials = _parse_obj_file(path_str)
 
-        # `process_and_instantiate_faces` needs a per-face material id list;
+        # `_process_and_instantiate_faces` needs a per-face material id list;
         # absent a Rhino sidecar we fall back to the OBJ's `usemtl` value.
         material_id_array = list(face_group_materials)
         face_records = _process_and_instantiate_faces(
@@ -173,11 +118,3 @@ class ObjImporter:
             ],
             metadata={"source_path": path},
         )
-
-
-# Temporary compatibility exports while repairs are still legacy-oriented.
-clean_face_loop = _clean_face_loop
-deduplicate_vertices = _deduplicate_vertices
-parse_obj_file = _parse_obj_file
-process_and_instantiate_faces = _process_and_instantiate_faces
-extract_rhino_materials = _extract_rhino_materials
