@@ -8,11 +8,7 @@ variants they accept. `Mesh` is currently the only variant.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar, List, Protocol, Tuple, runtime_checkable
-
-if TYPE_CHECKING:
-    from geometry_pipeline.core.report import PipelineResult
+from typing import ClassVar, List, Protocol, Tuple, runtime_checkable
 
 # ---- Primitive value objects ------------------------------------------------
 
@@ -43,31 +39,6 @@ class MaterialInfo:
 @runtime_checkable
 class Geometry(Protocol):
     kind: ClassVar[str]
-
-
-class Exporter(Protocol):
-    """Port for geometry sinks: write the given geometry to ``path``.
-
-    Defined here in the core domain so that ``core`` (e.g. ``profile``) and
-    ``io`` can both depend on it without ``core`` importing ``io``. Concrete
-    exporters live under ``io/exporters`` and implement this protocol.
-    ``path_for`` lets a sink derive its own filename from a base path.
-    """
-
-    def path_for(self, base: Path) -> Path: ...
-    def write(self, geom: Geometry, path: Path) -> None: ...
-
-
-class ReportWriter(Protocol):
-    """Port for result sinks: serialize a ``PipelineResult`` to ``path``.
-
-    Unlike ``Exporter`` this consumes the run's result (issues + snapshots)
-    rather than the geometry, so it is a distinct port. Concrete writers live
-    under ``reporting`` and implement this protocol.
-    """
-
-    def path_for(self, base: Path) -> Path: ...
-    def write(self, result: PipelineResult, path: Path) -> None: ...
 
 
 @dataclass

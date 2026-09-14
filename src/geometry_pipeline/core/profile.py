@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from geometry_pipeline.core.ir import Exporter, Geometry, ReportWriter
+from geometry_pipeline.core.ir import Geometry
 from geometry_pipeline.core.issues import IssueKind
+from geometry_pipeline.core.ports import Exporter, ReportWriter
 from geometry_pipeline.core.tolerances import Tolerances
 from geometry_pipeline.repairs.base import RepairStep
 from geometry_pipeline.validators.base import Validator

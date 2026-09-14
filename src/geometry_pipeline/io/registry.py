@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from geometry_pipeline.core.ir import Exporter
-from geometry_pipeline.io.importers.base import Importer
+from geometry_pipeline.core.ports import Exporter, Importer
 
 logger = logging.getLogger(__name__)
 

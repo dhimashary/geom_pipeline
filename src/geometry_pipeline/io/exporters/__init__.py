@@ -6,7 +6,7 @@ leaves room for kind-specific variants (e.g. a future `BRepObjExporter`)
 without overloading a single class with `if kind == ...` branches.
 """
 
-from geometry_pipeline.core.ir import Exporter
+from geometry_pipeline.core.ports import Exporter
 from geometry_pipeline.io.exporters.mesh_geo import GeoExporter, GmshGeoExporter
 from geometry_pipeline.io.exporters.mesh_obj import MeshObjExporter
 from geometry_pipeline.io.exporters.mesh_three_dm import MeshThreeDMExporter
