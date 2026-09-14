@@ -74,7 +74,7 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config) -> None:
 @pytest.fixture
 def real_room_obj() -> Path:
     """The real, all-defects room used only for the end-to-end smoke test."""
-    path = MODELS_DIR / "public" / "01_Apartment_Room" / "Apartment_Room.obj"
+    path = MODELS_DIR / "public" / "01_Apartment_Room_Broken" / "Apartment_Room.obj"
     if not path.exists():
         pytest.skip(f"real geometry fixture missing: {path}")
     return path
