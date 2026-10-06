@@ -45,6 +45,9 @@ Key runtime dependencies (pinned in [pyproject.toml](pyproject.toml)): `numpy`,
 > native kernel (or set `VOLUME_DETECTOR_BIN`) to enable cavity detection, or
 > leave `detect_cavities=False` to skip it. A pure-Python voxel detector exists
 > but is only used for testing via an explicit `detection_mode="voxel"`.
+> See [the native volume detection guide](docs/NATIVE_VOLUME_DETECTION_GUIDE.md)
+> for how bounded regions are found and what the grid-based result does not
+> guarantee.
 
 ---
 
@@ -254,4 +257,4 @@ IR model, or run the tests / linters, see the
 
 ## License
 
-MIT — see [LICENSE](../LICENSE).
+GPL-3.0-or-later - see [LICENSE](LICENSE).
