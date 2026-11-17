@@ -30,6 +30,7 @@ import logging
 import os
 import subprocess
 import tempfile
+from importlib.resources import files
 from pathlib import Path
 from typing import List, Optional, Sequence, Tuple
 
@@ -37,11 +38,9 @@ from geometry_pipeline.core.ir import Cavity
 
 logger = logging.getLogger(__name__)
 
-# Repository root: src/geometry_pipeline/cavity_detection/native_bridge.py -> repo root
-_REPO_ROOT = Path(__file__).resolve().parents[3]
-
-# Allow overriding the binary location (e.g. in Docker) via env var.
-_DEFAULT_BINARY = _REPO_ROOT / "bin" / "volume_detector"
+# Installed by CMake into the package (see _native/CMakeLists.txt); VOLUME_DETECTOR_BIN overrides it.
+# importlib.resources (not __file__) so editable installs find it in site-packages too.
+_DEFAULT_BINARY = Path(str(files("geometry_pipeline") / "bin" / "volume_detector"))
 
 
 def native_detector_path() -> Optional[Path]:
@@ -122,8 +121,8 @@ def detect_cavities_native(
     binary = native_detector_path()
     if binary is None:
         raise FileNotFoundError(
-            "Native volume detector not found. Build it with "
-            "./app/geometry/volume/_native/build.sh or set VOLUME_DETECTOR_BIN."
+            "Native volume detector not found. Install CGAL and reinstall the package "
+            "(pip install -v . shows whether it was built), or set VOLUME_DETECTOR_BIN."
         )
 
     logger.info(

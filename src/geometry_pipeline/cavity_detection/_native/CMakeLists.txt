@@ -9,7 +9,11 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # CGAL ships a config package (CGALConfig.cmake) that also wires up GMP/MPFR.
-find_package(CGAL REQUIRED)
+find_package(CGAL QUIET)
+if(NOT CGAL_FOUND)
+    message(WARNING "CGAL not found: volume_detector not built, cavity detection unavailable")
+    return()
+endif()
 
 # The grid/visibility detector source lives in this directory.
 add_executable(volume_detector ${CMAKE_CURRENT_LIST_DIR}/volume_detector.cpp)
@@ -24,3 +28,5 @@ if(TARGET Eigen3::Eigen)
 elseif(DEFINED EIGEN3_INCLUDE_DIR)
     target_include_directories(volume_detector PRIVATE ${EIGEN3_INCLUDE_DIR})
 endif()
+
+install(TARGETS volume_detector DESTINATION geometry_pipeline/bin)

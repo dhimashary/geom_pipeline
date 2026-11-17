@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["scikit-build-core>=0.10"]
+build-backend = "scikit_build_core.build"
 
 [project]
 name = "geometry_pipeline"
@@ -41,20 +41,9 @@ Homepage = "https://github.com/choras-org/geometry_pipeline"
 # During the import rename, move the current top-level files
 # (__init__.py, api.py, report.py, tolerances.py) and the contents of app/*
 # into src/geometry_pipeline/, rewriting `app.*` imports to `geometry_pipeline.*`.
-[tool.setuptools.packages.find]
-where = ["src"]
-include = ["geometry_pipeline*"]
-
-[tool.setuptools.package-data]
-# Ship type marker, the compatibility baseline, and the native kernel sources
-# (needed so the C++ volume_detector can be compiled inside the Docker image).
-"geometry_pipeline" = [
-    "py.typed",
-    "compatibility/*.json",
-    "cavity_detection/_native/*.cpp",
-    "cavity_detection/_native/CMakeLists.txt",
-    "cavity_detection/_native/build.sh",
-]
+[tool.scikit-build]
+cmake.source-dir = "src/geometry_pipeline/cavity_detection/_native"
+wheel.packages = ["src/geometry_pipeline"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
