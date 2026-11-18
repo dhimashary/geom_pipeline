@@ -38,11 +38,18 @@ Key runtime dependencies (pinned in [pyproject.toml](pyproject.toml)): `numpy`,
 `meshio`.
 
 > **Native cavity detector (required for cavity detection).** Cavity detection
-> uses a C++ kernel under `src/geometry_pipeline/cavity_detection/_native/`. The
-> Docker image compiles it and sets `VOLUME_DETECTOR_BIN`. Running with
-> `detect_cavities=True` **requires** this binary — if it is missing, cavity
-> detection raises a `GeometryError` (there is no automatic fallback). Build the
-> native kernel (or set `VOLUME_DETECTOR_BIN`) to enable cavity detection, or
+> uses a C++ kernel under `src/geometry_pipeline/cavity_detection/_native/`.
+> `pip install` compiles it into the package (via scikit-build-core and CMake)
+> when CGAL is available — install it first with `brew install cgal` (macOS) or
+> `apt install libcgal-dev libeigen3-dev` (Debian/Ubuntu) or
+> `micromamba create -n cgal -c conda-forge cgal-cpp` (Windows; set
+> `CMAKE_PREFIX_PATH` to the env's `Library` folder and put `Library\bin` on
+> `PATH` so the detector finds its DLLs at runtime); a C++17 compiler is
+> needed, CMake is fetched automatically if missing. Without CGAL the package
+> still installs, just without the kernel (`pip install -v .` shows the warning).
+> Running with `detect_cavities=True` **requires** this binary — if it is
+> missing, cavity detection raises a `GeometryError` (there is no automatic
+> fallback). Set `VOLUME_DETECTOR_BIN` to use a binary built elsewhere, or
 > leave `detect_cavities=False` to skip it. A pure-Python voxel detector exists
 > but is only used for testing via an explicit `detection_mode="voxel"`.
 > See [the native volume detection guide](docs/NATIVE_VOLUME_DETECTION_GUIDE.md)

@@ -136,6 +136,7 @@ def test_native_detector_path_none_when_absent(monkeypatch):
 def test_native_detector_path_uses_env_override(tmp_path, monkeypatch):
     fake_bin = tmp_path / "volume_detector"
     fake_bin.write_text("#!/bin/sh\n")
+    fake_bin.chmod(0o755)  # os.access(X_OK) is always true on Windows, not on Linux/macOS
     monkeypatch.setenv("VOLUME_DETECTOR_BIN", str(fake_bin))
 
     assert native_detector_path() == fake_bin

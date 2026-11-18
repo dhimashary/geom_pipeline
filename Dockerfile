@@ -1,10 +1,11 @@
 # syntax=docker/dockerfile:1
 
 ###############################################################################
-# Stage 1 — build the native CGAL "volume_detector" kernel.
-# This is the only part that needs a C++ toolchain + CGAL/Eigen/GMP/MPFR.
+# Stage 1 — build the wheel. scikit-build-core compiles the native CGAL
+# "volume_detector" kernel into it, so this is the only stage that needs a
+# C++ toolchain + CGAL/Eigen/GMP/MPFR headers.
 ###############################################################################
-FROM python:3.11-slim AS native-build
+FROM python:3.11-slim AS wheel-build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
@@ -15,14 +16,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libmpfr-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy only the native sources to maximise layer caching.
-# Adjust this path if you nest the package differently during the rename.
-COPY src/geometry_pipeline/cavity_detection/_native/ /native/
-
-RUN cmake -S /native -B /native/build -DCMAKE_BUILD_TYPE=Release \
-    && cmake --build /native/build --config Release -j \
-    && mkdir -p /out \
-    && cp /native/build/volume_detector /out/volume_detector
+COPY pyproject.toml README.md /src/
+COPY src/ /src/src/
+RUN pip wheel --no-cache-dir --no-deps -w /wheels /src
 
 ###############################################################################
 # Stage 2 — runtime image with the Python package installed.
@@ -39,18 +35,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libmpfr6 \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+COPY --from=wheel-build /wheels /wheels
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir /wheels/*.whl \
+    && rm -rf /wheels
 
-# Install the Python package (and its dependencies).
-COPY pyproject.toml README.md ./
-COPY src/ ./src/
-RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir .
-
-# Drop in the prebuilt native detector and point the bridge at it.
-COPY --from=native-build /out/volume_detector /usr/local/bin/volume_detector
-ENV VOLUME_DETECTOR_BIN=/usr/local/bin/volume_detector
-
-# Smoke test that the package imports and the kernel is reachable.
-RUN python -c "import geometry_pipeline; print('geometry_pipeline import OK')"
+# Smoke test: the package imports and the native kernel was built into it.
+# The CMake build skips the kernel quietly when CGAL is missing, so fail here.
+RUN python -c "from geometry_pipeline.cavity_detection.native_bridge import native_detector_path as p; assert p(), 'volume_detector missing'; print('geometry_pipeline OK:', p())"
 
 CMD ["python", "-c", "import geometry_pipeline; print(geometry_pipeline.__name__)"]

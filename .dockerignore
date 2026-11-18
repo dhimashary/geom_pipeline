@@ -12,7 +12,7 @@ venv/
 build/
 dist/
 *.egg-info/
-src/**/volume/_native/build/
+src/**/_native/build/
 bin/
 
 # Tooling / VCS

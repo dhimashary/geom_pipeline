@@ -1,0 +1,75 @@
+name: Build and test
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.11", "3.12", "3.13"]
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install CGAL (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libcgal-dev libeigen3-dev libglu1-mesa
+
+      - name: Install CGAL (macOS)
+        if: runner.os == 'macOS'
+        run: brew install cgal
+
+      # No system package manager ships CGAL on Windows; conda-forge has it prebuilt
+      # (with Boost, Eigen, GMP, MPFR). Only the C++ libraries come from conda.
+      - name: Install CGAL (Windows)
+        if: runner.os == 'Windows'
+        id: cgal
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-name: cgal
+          create-args: -c conda-forge cgal-cpp
+
+      - name: Point CMake and the runtime at conda's CGAL (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          echo "CMAKE_PREFIX_PATH=${{ steps.cgal.outputs.environment-path }}\\Library" >> "$GITHUB_ENV"
+          echo "${{ steps.cgal.outputs.environment-path }}\\Library\\bin" >> "$GITHUB_PATH"
+
+      # Builds the sdist, then the wheel from it, so a file missing from the sdist fails here.
+      - name: Build sdist and wheel
+        run: uv build --python ${{ matrix.python-version }}
+
+      # Test the built wheel, not the source tree.
+      - name: Install wheel
+        run: |
+          uv venv --python ${{ matrix.python-version }}
+          uv pip install dist/*.whl pytest
+
+      # The CMake build skips the kernel quietly when CGAL is missing, so fail here.
+      - name: Check native detector is in the wheel
+        run: uv run --no-project python -c "from geometry_pipeline.cavity_detection.native_bridge import native_detector_path as p; assert p(), 'volume_detector missing'; print(p())"
+
+      - name: Run tests
+        run: uv run --no-project python -m pytest
